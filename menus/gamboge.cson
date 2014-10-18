@@ -1,0 +1,11 @@
+'menu': [
+  {
+    'label': 'Packages'
+    'submenu': [
+      'label': 'Gamboge'
+      'submenu': [
+        { 'label': 'Force start', 'command': 'gamboge:activate' }
+      ]
+    ]
+  }
+]
