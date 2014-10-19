@@ -3,7 +3,7 @@
   'ctrl-shift-space': 'gamboge:show-ghost-text'
 
 '.gamboge input.hidden-input':
-  'tab:' 'gamboge:complete'
+  'tab': 'gamboge:complete'
   'shift-tab': 'gamboge:complete-all'
   'down': 'gamboge:select-next'
   'up': 'gamboge:select-previous'

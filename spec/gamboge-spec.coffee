@@ -14,7 +14,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 {WorkspaceView} = require 'atom'
-Gamboge = require '../lib/gamboge'
+#Gamboge = require '../lib/gamboge'
 
 describe "Gamboge", ->
   activationPromise = null
@@ -24,22 +24,12 @@ describe "Gamboge", ->
     activationPromise = atom.packages.activatePackage('gamboge')
 
   describe "when the gamboge:suggest event is triggered", ->
-    it "attaches and then detaches the view", ->
-      expect(atom.workspaceView.find('.gamboge')).not.toExist()
+    it "shows the completion panel"
+      atom.workspaceView.trigger 'gamboge:suggest'
 
-      # This is an activation event, triggering it will cause the package to be
-      # activated.
-      atom.workspaceView.trigger 'gamboge:activate'
-
-      waitsForPromise ->
-        activationPromise
-
-      runs ->
-        expect(atom.workspaceView.find('.gamboge')).toExist()
-        atom.workspaceView.trigger 'gamboge:show-suggestions'
-        expect(atom.workspaceView.find('.gamboge')).not.toExist()
-
-
-  describe "when the gamboge:show-ghost-text is triggered"
-  describe "when the gamboge:complete is triggered"
-  describe "when the gamboge:complete-all is triggered"
+  describe "when the gamboge:show-ghost-text is triggered", ->
+    it 'should add ghost text to the editor'
+  describe "when the gamboge:complete is triggered", ->
+    it 'should add the first ghost-text token to the buffer'
+  describe "when the gamboge:complete-all is triggered", ->
+    it 'should add *all* of the ghost-text tokens to the buffer'

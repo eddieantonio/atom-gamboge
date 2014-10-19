@@ -3,7 +3,6 @@
   "main": "./lib/gamboge",
   "version": "0.1.0",
   "description": "Predictive code suggestions",
-  "activationEvents": ["gamboge:activate"],
   "repository": "https://github.com/eddieantonio/atom-gamboge",
   "license": "AGPL v3.0",
   "engines": {
