@@ -13,7 +13,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-{View} = require 'atom'
+{$, Point, Range, View} = require 'atom'
 
 # This class listens to editor events, forwarding state, and updating a model. In
 # effect, this is kind of a View/Controller in classical MVC.
@@ -21,6 +21,9 @@
 # It is primarily concerned with getting surrounding token context, receiving
 # predictions, and forwarding display of predictions (through [INSERT CLASS
 # HERE]).
+
+# Use at most this many tokens to form predictions.
+NGRAM_ORDER = 3
 
 # Note: Heavily based on: atom/autocomplete, (C) GitHub Inc. 2014
 # https://github.com/atom/autocomplete/blob/master/lib/autocomplete-view.coffee
@@ -58,11 +61,13 @@ class GambogeView extends View
       # TODO
       # Figure out change location from cursor
       rawTokens = @getTokensForCursorContext()
-      trailer = @makeMostImportantTokenList(rawTokens)
-      console.log {trailer}
+      tokens = @makeMostImportantTokenList(rawTokens)
 
       # Set off prediction request
-      # Display predictions
+      @predict tokens, (predictions) =>
+      # TODO: Display predictions...
+        console.log predictions
+
 
 
     # TODO: onDidChangePath will probably be useful later for telling the
@@ -80,39 +85,59 @@ class GambogeView extends View
     # This... might be useful?
 
   # Gets a list of tokens for the preceeding context of the cursor.
+  # TODO: Possible refactor: get all of this token stuff into its own...
+  # thing...
   getTokensForCursorContext: ->
-    # TODO: Return both preceeding and following tokens.
-    contextRange = @editor.getCurrentParagraphBufferRange()
+
+    # TODO: Fancier token retrieving logic!
+    # Get tokens for the current line
+    cursorPosition = @editor.getCursorBufferPosition()
+    beginningOfLine = new Point(cursorPosition.row, 0)
+    contextRange = new Range(beginningOfLine, cursorPosition)
+
+    # Even though Grammar::tokenizeLines does this for us, it always assumes
+    # the first line of the input is the first line in the file.
     text = @editor.getTextInBufferRange(contextRange)
     isFirstLine = contextRange.intersectsRow(0)
 
-    # Get the grammar to tokenize the context for us!
+    # Get the grammar to tokenize the context for us.
     {tokens} = @grammar.tokenizeLine(text, null, isFirstLine)
     tokens
 
   # Given tokens, returns a list of strings of tokens.
   makeMostImportantTokenList: (tokens) ->
-    numTokens = tokens.length
-    # Get last three tokens to make a trigram
-    lastThreeTokens = tokens.slice(numTokens - 3, numTokens)
-    (token.value for token in lastThreeTokens)
+    nonWhitespace = []
+    for token in tokens
+      value = token.value
+      continue unless value.trim?
+      nonWhitespace.push(value) unless value.trim() is ""
 
+    numTokens = nonWhitespace.length
+    # Get last three tokens to make a trigram
+    lastThreeTokens = nonWhitespace.slice(numTokens - NGRAM_ORDER, numTokens)
+
+  # Do the prediction, calling callback when finished.
+  predict: (tokens, done) ->
+    # Create the token path component, URI encoding each token.
+    path = (encodeURIComponent(token) for token in tokens).join('/')
+
+    origin = atom.config.get 'gamboge.unnaturalRESTOrigin'
+    # use @grammar.name => But need a look-up table for the language...
+    lang = 'py' #@grammar.langage
+    url = "http://#{origin}/#{lang}/predict/#{path}"
+    xhr = new XMLHttpRequest()
+    xhr.open('GET', url, yes)
+    xhr.setRequestHeader('Accept', 'application/json')
+    xhr.addEventListener 'load', =>
+      console.log {request: xhr}
+      return unless xhr.status is 200
+      done(JSON.parse(xhr.responseText))
+    xhr.send()
 
   # Tear down any state and detach.
   destroy: ->
     @editorView.removeClass 'gamboge'
     @detach()
-
-  # Probably loads all of the corpus model, thing, stuff.
-  activate: ->
-    # TODO: What am I even doing on activate?
-    console.log "GambogeView activated!"
-    """
-    if @hasParent()
-      @detach()
-    else
-      atom.workspaceView.append(this)
-    """
 
 # TODO: Make a popover suggestion list ACTUALLY based on autocomplete!
 # https://github.com/atom/autocomplete/blob/master/lib/autocomplete-view.coffee
