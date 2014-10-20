@@ -47,7 +47,8 @@ module.exports =
       return if editor.mini
       console.log 'Attaching to new editor...'
       gambogeView = new GambogeView(editor)
-      editor.on 'editor:will-be-removed', =>
+      editor.onDidDestroy =>
+        console.log 'Gamboge: Cleaning up event listener...'
         # Clean up the event dispatcher.
         gambogeView.remove()
 

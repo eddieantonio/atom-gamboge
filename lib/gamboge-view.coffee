@@ -15,6 +15,7 @@
 
 {$, Point, Range, View} = require 'atom'
 _ = require 'underscore-plus'
+{GhostTextView} = require('./ghost-text-view.coffee')
 
 # This class listens to editor events, forwarding state, and updating a model. In
 # effect, this is kind of a View/Controller in classical MVC.
@@ -27,6 +28,7 @@ _ = require 'underscore-plus'
 NGRAM_ORDER = 3
 
 # TODO: Refactor Gamboge event listener from this.
+# TODO: GambogeView IS NOT a View!
 
 # Note: Heavily based on: atom/autocomplete, (C) GitHub Inc. 2014
 # https://github.com/atom/autocomplete/blob/master/lib/autocomplete-view.coffee
@@ -34,12 +36,11 @@ module.exports =
 class GambogeView extends View
   editor: null
   buffer: null
-
+  $ghostText: null
 
   # TODO: Probably make a "prediction" class, that bundles all of this
   # stuff...
   predictionMarker: null
-  didPrediction: false
   predictionTextRange: null
 
   @content: ->
@@ -63,10 +64,6 @@ class GambogeView extends View
     # Invoked 300ms after last buffer change.
     # TODO: use `onDidChange` instead?
     @editor.onDidStopChanging =>
-      # Might be reacting change that WE caused! Simply return in this case.
-      if @didPrediction
-        console.log 'I did a prediction already! See?', @predictionMarker
-        return @didPrediction = false
 
       # TODO Figure out change location from cursor
       rawTokens = @getTokensForCursorContext()
@@ -95,29 +92,42 @@ class GambogeView extends View
   # Using markers, shows the GhostText.
   showGhostText: (predictions) ->
     return unless predictions.length
-    @didPrediction = true
 
     # TODO: Do something better than this...
-    firstPrediction = predictions[0][1].join(' ')
+    firstPrediction = predictions[0][1]
 
     # Get a marker for the place immediately adjacent the cursor.
     afterCursor = @editor.getCursorBufferPosition()
+
+    # Oh dear...
+    {row, column} = @editor.getCursorScreenPosition()
 
     @predictionMarker = @editor.markBufferPosition afterCursor,
       invalidate: 'touch'
       persistent: no
 
-    @predictionMarker.onDidChange ({isValid, wasValid}) =>
-      # Get rid of the prediction marker and any annotation associated with
-      # it...
-      if wasValid or not isValid
-        @predictionMarker.destroy()
-        @predictionMarker = null
-        # TODO: get rid of old ghost text
+    $row = $(".line[data-screen-row=#{row}]")
+    $sourceSpan = $row.children('.source, .text').first()
+    @$ghostText = new GhostTextView(firstPrediction)
+    # TODO: place the element where the *cursor* is!
+    $sourceSpan.append @$ghostText
 
-    # Okay.... now I have a marker... so Ghost it?
-    decoration = @editor.decorateMarker @predictionMarker, type: 'highlight', class: 'gamboge-ghost'
+    @predictionMarker.onDidChange (marker) =>
+      @destroyMarker() unless marker.isValid
 
+  # Get rid of the prediction marker and any annotation associated with it.
+  destroyMarker: ->
+    console.log 'Destroying marker'
+    @predictionMarker?.destroy()
+    @predictionMarker = null
+    @unshowGhostText()
+
+
+  unshowGhostText: ->
+    @editorView.find('.gamboge-ghost').remove()
+    console.log @$ghostText
+    @$ghostText = null
+    @editorView.removeClass('.gamboge')
 
   # Gets a list of tokens for the preceding context of the cursor.
   # TODO: Possible refactor: get all of this token stuff into its own...

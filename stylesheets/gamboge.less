@@ -1,6 +1,24 @@
-// TODO: Do I need this?
-@import "ui-variables";
 @import "syntax-variables";
 
-.gamboge {
+/* Overridable variables  */
+@ghost-color: @syntax-text-color;
+
+@-webkit-keyframes ghost-glow {
+  0% { opacity: 0.7; }
+  100% { opacity: 1; }
+}
+
+@ghost-radius: 0.25px;
+
+.gamboge-ghost {
+  display: inline-block;
+
+  color: rgba(0,0,0,0);
+  text-shadow: 0px 0px @ghost-radius @ghost-color;
+  -webkit-animation: ghost-glow 1s ease-in-out infinite alternate;
+}
+
+.gamboge-invisible {
+  @invis-color: @syntax-invisible-character-color;
+  text-shadow: 0px 0px @ghost-radius @invis-color;
 }
