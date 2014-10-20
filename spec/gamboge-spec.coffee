@@ -24,8 +24,8 @@ describe "Gamboge", ->
     activationPromise = atom.packages.activatePackage('gamboge')
 
   describe "when the gamboge:suggest event is triggered", ->
-    it "shows the completion panel"
-      atom.workspaceView.trigger 'gamboge:suggest'
+    it "shows the completion panel", ->
+      #atom.workspaceView.trigger 'gamboge:suggest'
 
   describe "when the gamboge:show-ghost-text is triggered", ->
     it 'should add ghost text to the editor'

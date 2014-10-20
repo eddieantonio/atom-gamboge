@@ -1,3 +1,4 @@
+# NOTE: By default, these conflict with both Autocomplete AND Autocomplete+!
 '.editor':
   'ctrl-space': 'gamboge:show-suggestions'
   'ctrl-shift-space': 'gamboge:show-ghost-text'

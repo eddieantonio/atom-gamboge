@@ -13,7 +13,8 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-{$, Point, Range, View} = require 'atom'
+{Point, Range, View} = require 'atom'
+_ = require 'underscore-plus'
 
 # This class listens to editor events, forwarding state, and updating a model. In
 # effect, this is kind of a View/Controller in classical MVC.
@@ -39,9 +40,6 @@ class GambogeView extends View
     @div class: 'gamboge hidden'
 
   initialize: (@editorView) ->
-    # TODO: Is this even required?
-    #atom.workspaceView.command "gamboge:activate", => @activate()
-
     {@editor} = @editorView
     @buffer = @editor.getBuffer()
     @grammar = @editor.getGrammar()
@@ -58,16 +56,15 @@ class GambogeView extends View
     # Invoked 300ms after last buffer change.
     # TODO: use `onDidChange` instead?
     @editor.onDidStopChanging =>
-      # TODO
-      # Figure out change location from cursor
+      # TODO Figure out change location from cursor
       rawTokens = @getTokensForCursorContext()
-      tokens = @makeMostImportantTokenList(rawTokens)
+      tokens = GambogeView.makeMostImportantTokenList(rawTokens)
 
       # Set off prediction request
       @predict tokens, (predictions) =>
       # TODO: Display predictions...
-        console.log predictions
-
+        console.log GambogeView.sortPredictions predictions
+        console.log "Done predictions."
 
 
     # TODO: onDidChangePath will probably be useful later for telling the
@@ -105,11 +102,11 @@ class GambogeView extends View
     tokens
 
   # Given tokens, returns a list of strings of tokens.
-  makeMostImportantTokenList: (tokens) ->
+  @makeMostImportantTokenList: (tokens) ->
     nonWhitespace = []
     for token in tokens
-      value = token.value
-      continue unless value.trim?
+      {value} = token
+      continue unless value?
       nonWhitespace.push(value) unless value.trim() is ""
 
     numTokens = nonWhitespace.length
@@ -129,10 +126,23 @@ class GambogeView extends View
     xhr.open('GET', url, yes)
     xhr.setRequestHeader('Accept', 'application/json')
     xhr.addEventListener 'load', =>
-      console.log {request: xhr}
       return unless xhr.status is 200
-      done(JSON.parse(xhr.responseText))
+      {suggestions} = JSON.parse(xhr.responseText)
+      done(suggestions)
     xhr.send()
+
+  @sortPredictions: (predictions) ->
+    # We want the longest, most probable prediction possible.
+    # The problem is that shorter predictions are most probable. So! We weight
+    # predictions not only based on their cross-entropy, but also how long
+    # they are relative to the longest prediction.
+    longestPrediction = _.max predictions, ([_entropy, tokens]) -> tokens.length
+    maxPredictionLen = longestPrediction[1].length
+
+    result = _.sortBy predictions, ([entropy, tokens]) ->
+      maxPredictionLen * entropy / tokens.length
+
+    result
 
   # Tear down any state and detach.
   destroy: ->

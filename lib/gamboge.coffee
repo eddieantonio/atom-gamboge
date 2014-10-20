@@ -13,21 +13,22 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-GambogeView = require './gamboge-view'
-
 # Note: this code heavily based on atom/autocomplete, (C) GitHub Inc. 2014 
 # https://github.com/atom/autocomplete/blob/master/lib/autocomplete.coffee
 module.exports =
 
   config:
     unnaturalRESTOrigin:
+      title: 'UnnaturaREST Origin URL'
       type: 'string'
       default: 'localhost:5000'
     # TODO: Should I rip-off Autocomplete+ like this?
-    enableAutoActivation:
+    enableAutoGhostText:
       type: 'boolean'
+      description: '''Automatically display first suggestion after a
+                      configurable delay'''
       default: yes
-    autoActivationDelay:
+    autoGhostTextDelay:
       type: 'integer'
       min: 0
       default: 100
@@ -38,6 +39,8 @@ module.exports =
 
 
   activate: ->
+    GambogeView = require './gamboge-view'
+
     console.log 'Activating Gamboge...'
     # Activate on each editor.
     # TODO: use `atom.workspace.observeTextEditors(cb)` instead?
@@ -49,7 +52,9 @@ module.exports =
           # Clean up the event dispatcher.
           gambogeView.remove()
 
+  # TODO: According to the
+  # [docs](https://atom.io/docs/latest/creating-a-package#source-code)
+  # deactivate is fine as long as you're not doing things to external files.
   deactivate: ->
     @editorSubcription?.off()
     @editorSubcription = null
-    @gambogeView.destroy()
