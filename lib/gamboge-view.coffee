@@ -13,7 +13,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-{Point, Range, View} = require 'atom'
+{$, Point, Range, View} = require 'atom'
 _ = require 'underscore-plus'
 
 # This class listens to editor events, forwarding state, and updating a model. In
@@ -26,6 +26,8 @@ _ = require 'underscore-plus'
 # Use at most this many tokens to form predictions.
 NGRAM_ORDER = 3
 
+# TODO: Refactor Gamboge event listener from this.
+
 # Note: Heavily based on: atom/autocomplete, (C) GitHub Inc. 2014
 # https://github.com/atom/autocomplete/blob/master/lib/autocomplete-view.coffee
 module.exports =
@@ -33,14 +35,19 @@ class GambogeView extends View
   editor: null
   buffer: null
 
-  # TODO: Refactor Gamboge event listener from this.
+
+  # TODO: Probably make a "prediction" class, that bundles all of this
+  # stuff...
+  predictionMarker: null
+  didPrediction: false
+  predictionTextRange: null
 
   @content: ->
     # TODO: look-up these classes! overlay from-top
     @div class: 'gamboge hidden'
 
-  initialize: (@editorView) ->
-    {@editor} = @editorView
+  initialize: (@editor) ->
+    @editorView = $(atom.workspace.getView(@editor))
     @buffer = @editor.getBuffer()
     @grammar = @editor.getGrammar()
 
@@ -56,15 +63,19 @@ class GambogeView extends View
     # Invoked 300ms after last buffer change.
     # TODO: use `onDidChange` instead?
     @editor.onDidStopChanging =>
+      # Might be reacting change that WE caused! Simply return in this case.
+      if @didPrediction
+        console.log 'I did a prediction already! See?', @predictionMarker
+        return @didPrediction = false
+
       # TODO Figure out change location from cursor
       rawTokens = @getTokensForCursorContext()
       tokens = GambogeView.makeMostImportantTokenList(rawTokens)
 
       # Set off prediction request
       @predict tokens, (predictions) =>
-      # TODO: Display predictions...
-        console.log GambogeView.sortPredictions predictions
-        console.log "Done predictions."
+        return unless predictions?
+        @showGhostText GambogeView.sortPredictions predictions
 
 
     # TODO: onDidChangePath will probably be useful later for telling the
@@ -81,7 +92,34 @@ class GambogeView extends View
     # Super future TODO: onDidChangeGrammar
     # This... might be useful?
 
-  # Gets a list of tokens for the preceeding context of the cursor.
+  # Using markers, shows the GhostText.
+  showGhostText: (predictions) ->
+    return unless predictions.length
+    @didPrediction = true
+
+    # TODO: Do something better than this...
+    firstPrediction = predictions[0][1].join(' ')
+
+    # Get a marker for the place immediately adjacent the cursor.
+    afterCursor = @editor.getCursorBufferPosition()
+
+    @predictionMarker = @editor.markBufferPosition afterCursor,
+      invalidate: 'touch'
+      persistent: no
+
+    @predictionMarker.onDidChange ({isValid, wasValid}) =>
+      # Get rid of the prediction marker and any annotation associated with
+      # it...
+      if wasValid or not isValid
+        @predictionMarker.destroy()
+        @predictionMarker = null
+        # TODO: get rid of old ghost text
+
+    # Okay.... now I have a marker... so Ghost it?
+    decoration = @editor.decorateMarker @predictionMarker, type: 'highlight', class: 'gamboge-ghost'
+
+
+  # Gets a list of tokens for the preceding context of the cursor.
   # TODO: Possible refactor: get all of this token stuff into its own...
   # thing...
   getTokensForCursorContext: ->
@@ -113,25 +151,28 @@ class GambogeView extends View
     # Get last three tokens to make a trigram
     lastThreeTokens = nonWhitespace.slice(numTokens - NGRAM_ORDER, numTokens)
 
-  # Do the prediction, calling callback when finished.
+  # Internal: Do the prediction, calling `done(maybeData)` when finished.
+  # maybeData can be null, to indicate that the prediction did not succeed.
   predict: (tokens, done) ->
     # Create the token path component, URI encoding each token.
     path = (encodeURIComponent(token) for token in tokens).join('/')
 
     origin = atom.config.get 'gamboge.unnaturalRESTOrigin'
-    # use @grammar.name => But need a look-up table for the language...
-    lang = 'py' #@grammar.langage
+    # TODO: use @grammar.name => But need a look-up table for the language...
+    lang = 'py'
     url = "http://#{origin}/#{lang}/predict/#{path}"
     xhr = new XMLHttpRequest()
     xhr.open('GET', url, yes)
     xhr.setRequestHeader('Accept', 'application/json')
     xhr.addEventListener 'load', =>
-      return unless xhr.status is 200
+      return done(null) unless xhr.status is 200
       {suggestions} = JSON.parse(xhr.responseText)
       done(suggestions)
     xhr.send()
 
   @sortPredictions: (predictions) ->
+    return predictions unless predictions.length
+
     # We want the longest, most probable prediction possible.
     # The problem is that shorter predictions are most probable. So! We weight
     # predictions not only based on their cross-entropy, but also how long

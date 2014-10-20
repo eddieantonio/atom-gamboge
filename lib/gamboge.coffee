@@ -25,8 +25,8 @@ module.exports =
     # TODO: Should I rip-off Autocomplete+ like this?
     enableAutoGhostText:
       type: 'boolean'
-      description: '''Automatically display first suggestion after a
-                      configurable delay'''
+      description: "Automatically display first suggestion after a
+                    configurable delay."
       default: yes
     autoGhostTextDelay:
       type: 'integer'
@@ -43,18 +43,17 @@ module.exports =
 
     console.log 'Activating Gamboge...'
     # Activate on each editor.
-    # TODO: use `atom.workspace.observeTextEditors(cb)` instead?
-    @editorSubcription = atom.workspaceView.eachEditorView (editor) =>
-      # TODO: Dunno exactly what any of these mean...
-      if editor.attached and not editor.mini
-        gambogeView = new GambogeView(editor)
-        editor.on 'editor:will-be-removed', =>
-          # Clean up the event dispatcher.
-          gambogeView.remove()
+    @editorSubcription = atom.workspace.observeTextEditors (editor) =>
+      return if editor.mini
+      console.log 'Attaching to new editor...'
+      gambogeView = new GambogeView(editor)
+      editor.on 'editor:will-be-removed', =>
+        # Clean up the event dispatcher.
+        gambogeView.remove()
 
   # TODO: According to the
   # [docs](https://atom.io/docs/latest/creating-a-package#source-code)
   # deactivate is fine as long as you're not doing things to external files.
   deactivate: ->
-    @editorSubcription?.off()
+    @editorSubcription?.dispose()
     @editorSubcription = null
