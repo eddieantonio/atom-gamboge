@@ -69,6 +69,8 @@ class GambogeView extends View
       rawTokens = @getTokensForCursorContext()
       tokens = GambogeView.makeMostImportantTokenList(rawTokens)
 
+      console.log predicting_for: tokens
+
       # Set off prediction request
       @predict tokens, (predictions) =>
         return unless predictions?
@@ -102,10 +104,16 @@ class GambogeView extends View
     # Oh dear...
     {row, column} = @editor.getCursorScreenPosition()
 
+    # TODO: Check if the cursor is on screen!
+
     @predictionMarker = @editor.markBufferPosition afterCursor,
       invalidate: 'touch'
       persistent: no
 
+    # XXX: This is a *disgusting* and frail way to add the ghost-text; I
+    # easily expect this to be broken in future versions in the near
+    # future. I really shouldn't be messing around with the editor DOM,
+    # but it's effective as long as I'm responsible with it!
     $row = $(".line[data-screen-row=#{row}]")
     $sourceSpan = $row.children('.source, .text').first()
     @$ghostText = new GhostTextView(firstPrediction)
@@ -144,6 +152,8 @@ class GambogeView extends View
     # the first line of the input is the first line in the file.
     text = @editor.getTextInBufferRange(contextRange)
     isFirstLine = contextRange.intersectsRow(0)
+
+    console.log tokenizing: text
 
     # Get the grammar to tokenize the context for us.
     {tokens} = @grammar.tokenizeLine(text, null, isFirstLine)

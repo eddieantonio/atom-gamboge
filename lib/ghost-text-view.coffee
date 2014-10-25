@@ -18,13 +18,16 @@ class GhostTextView extends View
 # Keys are special tokens that are represented by internal characters.
 specialChars = do ->
   mkInvisibleGetter = (prop) ->
-    {configurable: no, get: -> atom.config.get('editor.invisibles')[prop] }
+    get: -> atom.config.get('editor.invisibles')[prop]
+    enumerable: yes
 
-  Object.create Object::,
+  Object.create null,
     '<NEWLINE>': mkInvisibleGetter 'cr'
     '<NL>': mkInvisibleGetter 'cr'
     '<INDENT>': mkInvisibleGetter 'tab'
-    'DEDENT': {configurable: no, value: '⇤'}
+    'DEDENT':
+      get: -> atom.config.get('gamboge.dedentMarker')
+      enumerable: yes
 
 
 module.exports = {GhostTextView, specialChars}

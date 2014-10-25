@@ -1,7 +1,7 @@
 {
   "name": "gaboge",
   "main": "./lib/gamboge",
-  "version": "0.1.0",
+  "version": "0.0.0-alpha",
   "description": "Predictive code suggestions",
   "repository": "https://github.com/eddieantonio/atom-gamboge",
   "license": "AGPL v3.0",

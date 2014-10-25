@@ -1,24 +1,37 @@
 @import "syntax-variables";
 
+@pale-blue-glow: #f0f9ff;
+
+// TODO: Maybe define this as a mixin instead...
+.ghostify-color(@color) {
+  @ghost-color: overlay(@color, @pale-blue-glow);
+}
+
+@ghost-base-color: @syntax-text-color;
+@ghost-invisible-color: @syntax-invisible-character-color;
+
 /* Overridable variables  */
-@ghost-color: @syntax-text-color;
 
 @-webkit-keyframes ghost-glow {
   0% { opacity: 0.7; }
   100% { opacity: 1; }
 }
 
-@ghost-radius: 0.25px;
+@ghost-radius: 5px;
 
 .gamboge-ghost {
   display: inline-block;
 
-  color: rgba(0,0,0,0);
+  // Adds `ghost-color` to scope.
+  .ghostify-color(@ghost-base-color);
+
+  //color: rgba(0,0,0,0);
   text-shadow: 0px 0px @ghost-radius @ghost-color;
   -webkit-animation: ghost-glow 1s ease-in-out infinite alternate;
 }
 
 .gamboge-invisible {
-  @invis-color: @syntax-invisible-character-color;
-  text-shadow: 0px 0px @ghost-radius @invis-color;
+  .ghostify-color(@ghost-invisible-color);
+
+  text-shadow: 0px 0px @ghost-radius @ghost-invisible-color;
 }

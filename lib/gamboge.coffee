@@ -32,6 +32,12 @@ module.exports =
       type: 'integer'
       min: 0
       default: 100
+    dedentMarker:
+      type: 'string'
+      description: "Symbol to show when Gamboge suggests a dedent for
+                    indentation-sensitive langauages such as Python,
+                    CoffeeScript, Haskell, etc."
+      default: '«'
 
 
   editorSubcription: null
