@@ -43,8 +43,8 @@ class GambogeView extends View
   $ghostText: null
 
   predictionMarker: null
-  predictionTextRange: null
 
+  # The model.
   predictionList: new PredictionList
 
   @content: ->
@@ -54,10 +54,6 @@ class GambogeView extends View
   initialize: (@editor) ->
     @editorView = $(atom.workspace.getView(@editor))
     @buffer = @editor.getBuffer()
-    @grammar = @editor.getGrammar()
-
-    # This class will be useful in selectors.
-    @editorView.addClass 'gamboge'
 
     # LISTEN TO ALL OF THE EVENTS!
     @registerEvents()
@@ -79,28 +75,33 @@ class GambogeView extends View
         @predictionList.setPredictions predictions
 
     @predictionList.onDidChangePredictions =>
-      @showGhostText @predictionList._predictions
-
-    # TODO: onDidChangePath will probably be useful later for telling the
-    # prediction back-end that stuff changed.
-
-    @editor.onDidChangeCursorPosition =>
-      # TODO: Change model stuff here!
+      console.log did_prediction_change: @predictionList
 
     @subscribeToCommand @editorView, 'gamboge:show-suggestions', =>
-      # TODO....
+      console.log show_suggestions: @predictionList
     @subscribeToCommand @editorView, 'gamboge:show-ghost-text', =>
-      # TODO...
+      console.log show_text_for: @predictionList.current()
 
-    # Super future TODO: onDidChangeGrammar
-    # This... might be useful?
+    @subscribeToCommand @editorView, 'gamboge:complete', =>
+    @subscribeToCommand @editorView, 'gamboge:complete-all', =>
+
+    @subscribeToCommand @editorView, 'gamboge:next-prediction', =>
+      @predictionList.next()
+    @subscribeToCommand @editorView, 'gamboge:previous-prediction', =>
+      @predictionList.prev()
+
+    @predictionList.onDidChangeIndex (event) =>
+      @unshowGhostText()
+      console.log { changed_index: event }
+      {target} = event
+      @showGhostText target.current()
+
 
   # Using markers, shows the GhostText.
-  showGhostText: (predictions) ->
-    return unless predictions.length
+  showGhostText: (prediction) ->
+    return unless prediction
 
-    # TODO: Do something better than this...
-    firstPrediction = @predictionList.current().tokens
+    {tokens} = prediction
 
     # Get a marker for the place immediately adjacent the cursor.
     afterCursor = @editor.getCursorBufferPosition()
@@ -120,12 +121,17 @@ class GambogeView extends View
     # effective as long as we're responsible with it...
     $row = $(".line[data-screen-row=#{row}]")
     $sourceSpan = $row.children('.source, .text').first()
-    @$ghostText = new GhostTextView(firstPrediction)
+    @$ghostText = new GhostTextView(tokens)
     # TODO: place the element where the *cursor* is!
     $sourceSpan.append @$ghostText
 
+    # This class will be useful in selectors.
+    @editorView.addClass 'gamboge'
+
     @predictionMarker.onDidChange (marker) =>
-      @destroyMarker() unless marker.isValid
+      unless marker.isValid
+        @destroyMarker()
+        @editorView.removeClass 'gamboge'
 
   # Get rid of the prediction marker and any annotation associated with it.
   destroyMarker: ->
@@ -136,6 +142,7 @@ class GambogeView extends View
 
 
   unshowGhostText: ->
+    return unless @$ghostText?
     @editorView.find('.gamboge-ghost').remove()
     console.log @$ghostText
     @$ghostText = null
@@ -157,7 +164,7 @@ class GambogeView extends View
   predict: (text, done) ->
     origin = atom.config.get 'gamboge.unnaturalRESTOrigin'
 
-    # TODO: use @grammar.name => But need a look-up table for the language...
+    # TODO: use grammar.name; need a look-up table for each language.
     lang = 'py'
 
     url = "http://#{origin}/#{lang}/predict/"

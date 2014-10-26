@@ -37,19 +37,21 @@ class PredictionList
 
   # Change the index by the given value.
   changeRelative: (amount) ->
-    return if amount is 0
-    direction = if amount > 0 then 'next' else 'prev'
+    direction = switch
+      when amount is 0 then 'beginning'
+      when amount > 0 then 'next'
+      else 'prev'
 
     index = @_index + amount
 
     unless 0 <= index < @_predictions.length
       # Wrap the value around.
       index %%= @_predictions.length
-      wrap = false
+      wrapped = false
     else
-      wrap = true
+      wrapped = true
 
-    status = {index, direction, wrapped}
+    status = {index, direction, wrapped, target: @}
 
     @emitter.emit 'did-change-index', status
     status
@@ -61,6 +63,8 @@ class PredictionList
     @_index = 0
 
     @emitter.emit 'did-predictions-change', @
+    # Trigger the 'changed index event' with the new index 0.
+    @changeRelative 0
 
   # Called on invalidation
   invalidate: ->
