@@ -14,7 +14,6 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 {WorkspaceView} = require 'atom'
-#Gamboge = require '../lib/gamboge'
 
 describe "Gamboge", ->
   activationPromise = null
@@ -24,8 +23,7 @@ describe "Gamboge", ->
     activationPromise = atom.packages.activatePackage('gamboge')
 
   describe "when the gamboge:suggest event is triggered", ->
-    it "shows the completion panel", ->
-      #atom.workspaceView.trigger 'gamboge:suggest'
+    it "shows the completion panel"
 
   describe "when the gamboge:show-ghost-text is triggered", ->
     it 'should add ghost text to the editor'

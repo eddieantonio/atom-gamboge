@@ -15,7 +15,10 @@
 
 {$, Point, Range, View} = require 'atom'
 _ = require 'underscore-plus'
-{GhostTextView} = require('./ghost-text-view.coffee')
+
+
+{GhostTextView} = require './ghost-text-view'
+PredictionList = require './prediction-list'
 
 # This class listens to editor events, forwarding state, and updating a model. In
 # effect, this is kind of a View/Controller in classical MVC.
@@ -25,7 +28,7 @@ _ = require 'underscore-plus'
 # HERE]).
 
 # Use at most this many tokens to form predictions.
-NGRAM_ORDER = 3
+NGRAM_ORDER = 4
 
 # TODO: Refactor Gamboge event listener from this.
 # TODO: GambogeView IS NOT a View!
@@ -38,10 +41,10 @@ class GambogeView extends View
   buffer: null
   $ghostText: null
 
-  # TODO: Probably make a "prediction" class, that bundles all of this
-  # stuff...
   predictionMarker: null
   predictionTextRange: null
+
+  predictionList: new PredictionList
 
   @content: ->
     # TODO: look-up these classes! overlay from-top
@@ -65,17 +68,17 @@ class GambogeView extends View
     # TODO: use `onDidChange` instead?
     @editor.onDidStopChanging =>
 
-      # TODO Figure out change location from cursor
-      rawTokens = @getTokensForCursorContext()
-      tokens = GambogeView.makeMostImportantTokenList(rawTokens)
+      text = @getTextForCursorContext()
 
-      console.log predicting_for: tokens
+      console.log predicting_for: text
 
       # Set off prediction request
-      @predict tokens, (predictions) =>
+      @predict text, (predictions) =>
         return unless predictions?
-        @showGhostText GambogeView.sortPredictions predictions
+        @predictionList.setPredictions predictions
 
+    @predictionList.onDidChangePredictions =>
+      @showGhostText @predictionList._predictions
 
     # TODO: onDidChangePath will probably be useful later for telling the
     # prediction back-end that stuff changed.
@@ -96,7 +99,7 @@ class GambogeView extends View
     return unless predictions.length
 
     # TODO: Do something better than this...
-    firstPrediction = predictions[0][1]
+    firstPrediction = @predictionList.current().tokens
 
     # Get a marker for the place immediately adjacent the cursor.
     afterCursor = @editor.getCursorBufferPosition()
@@ -110,10 +113,10 @@ class GambogeView extends View
       invalidate: 'touch'
       persistent: no
 
-    # XXX: This is a *disgusting* and frail way to add the ghost-text; I
-    # easily expect this to be broken in future versions in the near
-    # future. I really shouldn't be messing around with the editor DOM,
-    # but it's effective as long as I'm responsible with it!
+    # XXX: This is a *disgusting* and fragile way to add the ghost-text; I
+    # easily expect this to be broken in future versions in the near future. I
+    # really shouldn't be messing around with the editor DOM, but it's
+    # effective as long as we're responsible with it...
     $row = $(".line[data-screen-row=#{row}]")
     $sourceSpan = $row.children('.source, .text').first()
     @$ghostText = new GhostTextView(firstPrediction)
@@ -137,73 +140,35 @@ class GambogeView extends View
     @$ghostText = null
     @editorView.removeClass('.gamboge')
 
-  # Gets a list of tokens for the preceding context of the cursor.
-  # TODO: Possible refactor: get all of this token stuff into its own...
-  # thing...
-  getTokensForCursorContext: ->
-
-    # TODO: Fancier token retrieving logic!
-    # Get tokens for the current line
+  # Gets a whole bunch of text prior to the cursor.
+  getTextForCursorContext: ->
+    # Get text for the current line.
     cursorPosition = @editor.getCursorBufferPosition()
     beginningOfLine = new Point(cursorPosition.row, 0)
     contextRange = new Range(beginningOfLine, cursorPosition)
 
-    # Even though Grammar::tokenizeLines does this for us, it always assumes
-    # the first line of the input is the first line in the file.
-    text = @editor.getTextInBufferRange(contextRange)
-    isFirstLine = contextRange.intersectsRow(0)
+    # TODO: Get more text than just the current line.
+    @editor.getTextInBufferRange(contextRange)
 
-    console.log tokenizing: text
-
-    # Get the grammar to tokenize the context for us.
-    {tokens} = @grammar.tokenizeLine(text, null, isFirstLine)
-    tokens
-
-  # Given tokens, returns a list of strings of tokens.
-  @makeMostImportantTokenList: (tokens) ->
-    nonWhitespace = []
-    for token in tokens
-      {value} = token
-      continue unless value?
-      nonWhitespace.push(value) unless value.trim() is ""
-
-    numTokens = nonWhitespace.length
-    # Get last three tokens to make a trigram
-    lastThreeTokens = nonWhitespace.slice(numTokens - NGRAM_ORDER, numTokens)
-
+
   # Internal: Do the prediction, calling `done(maybeData)` when finished.
   # maybeData can be null, to indicate that the prediction did not succeed.
-  predict: (tokens, done) ->
-    # Create the token path component, URI encoding each token.
-    path = (encodeURIComponent(token) for token in tokens).join('/')
-
+  predict: (text, done) ->
     origin = atom.config.get 'gamboge.unnaturalRESTOrigin'
+
     # TODO: use @grammar.name => But need a look-up table for the language...
     lang = 'py'
-    url = "http://#{origin}/#{lang}/predict/#{path}"
+
+    url = "http://#{origin}/#{lang}/predict/"
     xhr = new XMLHttpRequest()
-    xhr.open('GET', url, yes)
+    xhr.open('POST', url, yes)
     xhr.setRequestHeader('Accept', 'application/json')
+    xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded')
     xhr.addEventListener 'load', =>
       return done(null) unless xhr.status is 200
       {suggestions} = JSON.parse(xhr.responseText)
       done(suggestions)
-    xhr.send()
-
-  @sortPredictions: (predictions) ->
-    return predictions unless predictions.length
-
-    # We want the longest, most probable prediction possible.
-    # The problem is that shorter predictions are most probable. So! We weight
-    # predictions not only based on their cross-entropy, but also how long
-    # they are relative to the longest prediction.
-    longestPrediction = _.max predictions, ([_entropy, tokens]) -> tokens.length
-    maxPredictionLen = longestPrediction[1].length
-
-    result = _.sortBy predictions, ([entropy, tokens]) ->
-      maxPredictionLen * entropy / tokens.length
-
-    result
+    xhr.send("s=#{encodeURIComponent(text)}")
 
   # Tear down any state and detach.
   destroy: ->

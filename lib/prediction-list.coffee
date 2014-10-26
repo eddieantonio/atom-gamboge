@@ -79,7 +79,7 @@ class PredictionList
 
   # Calls callback when the prediction list has changed.
   # The callback gets passed the prediction list.
-  onDidPredictionChange: (callback) ->
+  onDidChangePredictions: (callback) ->
     @emitter.on 'did-predictions-change', callback
 
   # Calls callback when the prediction list has been marked as
