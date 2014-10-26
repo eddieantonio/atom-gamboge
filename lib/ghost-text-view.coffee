@@ -1,6 +1,6 @@
 # Not to be confused with GhostScript utility...
 
-{View} = require 'atom'
+{View} = require 'space-pen'
 
 # A SpacePen view for
 class GhostTextView extends View
