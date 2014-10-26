@@ -42,7 +42,7 @@ class PredictionList
       when amount > 0 then 'next'
       else 'prev'
 
-    index = @_index + amount
+    index = @_index += amount
 
     unless 0 <= index < @_predictions.length
       # Wrap the value around.
