@@ -17,32 +17,9 @@
 # https://github.com/atom/autocomplete/blob/master/lib/autocomplete.coffee
 module.exports =
 
-  config:
-    unnaturalRESTOrigin:
-      title: 'UnnaturaREST Origin URL'
-      type: 'string'
-      default: 'localhost:5000'
-    # TODO: Should I rip-off Autocomplete+ like this?
-    enableAutoGhostText:
-      type: 'boolean'
-      description: "Automatically display first suggestion after a
-                    configurable delay."
-      default: yes
-    autoGhostTextDelay:
-      type: 'integer'
-      min: 0
-      default: 100
-    dedentMarker:
-      type: 'string'
-      description: "Symbol to show when Gamboge suggests a dedent for
-                    indentation-sensitive langauages such as Python,
-                    CoffeeScript, Haskell, etc."
-      default: '«'
-
+  config: require('./config')
 
   editorSubcription: null
-  # TODO: List of gamboge event listeners?
-
 
   activate: ->
     GambogeView = require './gamboge-view'
