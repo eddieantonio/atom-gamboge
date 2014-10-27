@@ -42,6 +42,7 @@ class GambogeView extends View
   buffer: null
   $ghostText: null
 
+  lastChangeWasPredictionInsert: false
   predictionMarker: null
 
   # The model.
@@ -60,10 +61,10 @@ class GambogeView extends View
 
   registerEvents: ->
     console.log 'Registering events...'
-    # Updates the prediction model.
-    # Invoked 300ms after last buffer change.
+    # Updates the prediction model. Invoked 300ms after last buffer change.
     # TODO: use `onDidChange` instead?
     @editor.onDidStopChanging =>
+      return @resetChangeIgnorance() if @lastChangeWasPredictionInsert
 
       text = @getTextForCursorContext()
 
@@ -74,6 +75,7 @@ class GambogeView extends View
         return unless predictions?
         @predictionList.setPredictions predictions
 
+    # TODO: Is this needed?
     @predictionList.onDidChangePredictions =>
       console.log did_prediction_change: @predictionList
 
@@ -83,7 +85,9 @@ class GambogeView extends View
       console.log show_text_for: @predictionList.current()
 
     @subscribeToCommand @editorView, 'gamboge:complete', =>
+      @completeTokens n: 1
     @subscribeToCommand @editorView, 'gamboge:complete-all', =>
+      @completeTokens all: yes
 
     @subscribeToCommand @editorView, 'gamboge:next-prediction', =>
       @predictionList.next()
@@ -95,6 +99,36 @@ class GambogeView extends View
       console.log { changed_index: event }
       {target} = event
       @showGhostText target.current()
+
+  completeTokens: ({n, all}) ->
+    {entropy, tokens} = @predictionList.current()
+    n = tokens.length if all
+    insertTokens = tokens.slice(0, n)
+
+    insertText = GambogeView.textFromTokens insertTokens
+    cursorPosition = @editor.getCursorBufferPosition()
+
+    @ignoreNextChange()
+    @editor.setTextInBufferRange([cursorPosition, cursorPosition], insertText)
+
+
+
+  @specialTokens:
+    '<NEWLINE>': (editor) -> '\n'
+    '<NL>':      (editor) -> '\n'
+    '<INDENT>':           -> ''
+    'DEDENT':             -> ''
+
+  # TODO: Extract the method into its own module!
+  # TODO: Make it take in the current indent level. Do a bunch of indentation
+  # thing!
+  @textFromTokens: (tokens) ->
+    text = ""
+    for token in tokens
+      text +=
+        if token of GambogeView.specialTokens then GambogeView.specialTokens[token]()
+        else " #{token}"
+    text
 
 
   # Using markers, shows the GhostText.
@@ -140,13 +174,20 @@ class GambogeView extends View
     @predictionMarker = null
     @unshowGhostText()
 
-
   unshowGhostText: ->
     return unless @$ghostText?
     @editorView.find('.gamboge-ghost').remove()
     console.log @$ghostText
     @$ghostText = null
     @editorView.removeClass('.gamboge')
+
+  # Next change event was our fault...
+  ignoreNextChange: ->
+    @lastChangeWasPredictionInsert = true
+
+  resetChangeIgnorance: ->
+    console.log last_change_ignored: true
+    @lastChangeWasPredictionInsert = false
 
   # Gets a whole bunch of text prior to the cursor.
   getTextForCursorContext: ->
