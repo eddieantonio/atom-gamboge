@@ -1,5 +1,5 @@
-# Gamboge Package
+# Gamboge
 
-Predictive code suggestion to the max!
+It's like SwiftKey, but for code. In prototyping stages.
 
-![A screenshot of your spankin' package](https://f.cloud.github.com/assets/69169/2290250/c35d867a-a017-11e3-86be-cd7c5bf3ff9b.gif)
+![Gamboge in Action](http://www.eddieantonio.ca/atom-gamboge/img/gamboge-0.1.0.gif)
