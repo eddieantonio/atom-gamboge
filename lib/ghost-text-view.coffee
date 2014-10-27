@@ -4,16 +4,14 @@
 
 # A SpacePen view for
 class GhostTextView extends View
-  tokens: []
-
   @content: (tokens) ->
     @div class: 'gamboge-ghost', =>
       for token in tokens
+        @text ' '
         if token of specialChars
           @span specialChars[token], class: 'gamboge-invisible'
         else @text token
         # Add a space, just to make sure we're still sane.
-        @text ' '
 
 # Keys are special tokens that are represented by internal characters.
 specialChars = do ->

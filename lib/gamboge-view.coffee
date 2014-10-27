@@ -65,22 +65,14 @@ class GambogeView extends View
     # TODO: use `onDidChange` instead?
     @editor.onDidStopChanging =>
       return @resetChangeIgnorance() if @lastChangeWasPredictionInsert
-
-      text = @getTextForCursorContext()
-
-      console.log predicting_for: text
-
-      # Set off prediction request
-      @predict text, (predictions) =>
-        return unless predictions?
-        @predictionList.setPredictions predictions
+      @askForPredictions()
 
     # TODO: Is this needed?
     @predictionList.onDidChangePredictions =>
       console.log did_prediction_change: @predictionList
 
     @subscribeToCommand @editorView, 'gamboge:show-suggestions', =>
-      console.log show_suggestions: @predictionList
+      @askForPredictions()
     @subscribeToCommand @editorView, 'gamboge:show-ghost-text', =>
       console.log show_text_for: @predictionList.current()
 
@@ -110,7 +102,16 @@ class GambogeView extends View
 
     @ignoreNextChange()
     @editor.setTextInBufferRange([cursorPosition, cursorPosition], insertText)
+    @askForPredictions()
 
+  askForPredictions: ->
+    text = @getTextForCursorContext()
+
+    console.log predicting_for: text
+    # Set off prediction request
+    @predict text, (predictions) =>
+      return unless predictions?
+      @predictionList.setPredictions predictions
 
 
   @specialTokens:
