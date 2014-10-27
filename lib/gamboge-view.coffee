@@ -67,21 +67,14 @@ class GambogeView extends View
     @registerEvents()
 
   registerEvents: ->
-    console.log 'Registering events...'
     # Updates the prediction model. Invoked 300ms after last buffer change.
     # TODO: use `onDidChange` instead?
     @editor.onDidStopChanging =>
       return @resetChangeIgnorance() if @lastChangeWasPredictionInsert
       @askForPredictions()
 
-    # TODO: Is this needed?
-    @predictionList.onDidChangePredictions =>
-      console.log did_prediction_change: @predictionList
-
     @subscribeToCommand @editorView, 'gamboge:show-suggestions', =>
       @askForPredictions()
-    @subscribeToCommand @editorView, 'gamboge:show-ghost-text', =>
-      console.log show_text_for: @predictionList.current()
 
     @subscribeToCommand @editorView, 'gamboge:complete', =>
       @completeTokens n: 1
@@ -95,7 +88,6 @@ class GambogeView extends View
 
     @predictionList.onDidChangeIndex (event) =>
       @unshowGhostText()
-      console.log { changed_index: event }
       {target} = event
       @showGhostText target.current()
 
@@ -114,7 +106,6 @@ class GambogeView extends View
   askForPredictions: ->
     text = @getTextForCursorContext()
 
-    console.log predicting_for: text
     # Set off prediction request
     @predict text, (predictions) =>
       return unless predictions?
@@ -161,7 +152,6 @@ class GambogeView extends View
 
   # Get rid of the prediction marker and any annotation associated with it.
   destroyMarker: ->
-    console.log 'Destroying marker'
     @predictionMarker?.destroy()
     @predictionMarker = null
     @unshowGhostText()
@@ -169,7 +159,6 @@ class GambogeView extends View
   unshowGhostText: ->
     return unless @$ghostText?
     @editorView.find('.gamboge-ghost').remove()
-    console.log @$ghostText
     @$ghostText = null
     @editorView.removeClass('.gamboge')
 
@@ -178,7 +167,6 @@ class GambogeView extends View
     @lastChangeWasPredictionInsert = true
 
   resetChangeIgnorance: ->
-    console.log last_change_ignored: true
     @lastChangeWasPredictionInsert = false
 
   # Gets a whole bunch of text prior to the cursor.

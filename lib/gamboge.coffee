@@ -28,10 +28,8 @@ module.exports =
     # Activate on each editor.
     @editorSubcription = atom.workspace.observeTextEditors (editor) =>
       return if editor.mini
-      console.log 'Attaching to new editor...'
       gambogeView = new GambogeView(editor)
       editor.onDidDestroy =>
-        console.log 'Gamboge: Cleaning up event listener...'
         # Clean up the event dispatcher.
         gambogeView.remove()
 
