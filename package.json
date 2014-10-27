@@ -1,5 +1,5 @@
 {
-  "name": "gaboge",
+  "name": "gamboge",
   "main": "./lib/gamboge",
   "version": "0.1.0",
   "description": "Predictive code suggestions",
