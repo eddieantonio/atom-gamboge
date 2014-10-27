@@ -42,16 +42,17 @@ class PredictionList
       when amount > 0 then 'next'
       else 'prev'
 
-    index = @_index += amount
+    @_index += amount
 
-    unless 0 <= index < @_predictions.length
-      # Wrap the value around.
-      index %%= @_predictions.length
-      wrapped = false
-    else
-      wrapped = true
+    wrapped = switch
+      when @_predictions.length is 0 then false
+      when not (0 <= @_index < @_predictions.length)
+        # Wrap the value around.
+        @_index %%= @_predictions.length
+        false
+      else true
 
-    status = {index, direction, wrapped, target: @}
+    status = {index: @_index, direction, wrapped, target: @}
 
     @emitter.emit 'did-change-index', status
     status
