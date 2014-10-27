@@ -16,18 +16,19 @@
 {WorkspaceView} = require 'atom'
 
 describe "Gamboge", ->
-  activationPromise = null
+  [workspaceView] = []
 
   beforeEach ->
-    atom.workspaceView = new WorkspaceView
-    activationPromise = atom.packages.activatePackage('gamboge')
+    atom.workspaceView = workspaceView = new WorkspaceView
+    atom.workspaceView.attachToDom()
 
-  describe "when the gamboge:suggest event is triggered", ->
-    it "shows the completion panel"
+    waitsForPromise ->
+      atom.packages.activatePackage('gamboge')
 
-  describe "when the gamboge:show-ghost-text is triggered", ->
-    it 'should add ghost text to the editor'
+    runs ->
+      atom.workspaceView.simulateDomAttachment()
+
   describe "when the gamboge:complete is triggered", ->
-    it 'should add the first ghost-text token to the buffer'
+    it 'should insert the first suggested token to the buffer'
   describe "when the gamboge:complete-all is triggered", ->
-    it 'should add *all* of the ghost-text tokens to the buffer'
+    it 'should add *all* of suggested tokens to the buffer'
