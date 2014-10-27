@@ -15,8 +15,9 @@
 
 # Makes a bunch of indents!
 makeIndents = (string, times) ->
-  console.assert times > 0
-  (string for _ in [1..times]).join('')
+  console.assert times >= 0
+  if times < 1 then ''
+  else (string for _ in [1..times]).join('')
 
 # Newline PLUS the next indentation
 newlineHandler =  (peek) ->
@@ -32,15 +33,15 @@ class InsertFormatter
 
   # Returns a proper string for the given string.
   format: (tokens) ->
-    text = ""
+    text = " "
     for i in [0...tokens.length]
-      # Have a peek coken.
+      # Have a peek token.
       [token, peekToken] = [tokens[i], tokens[i + 1]]
       text +=
         if token of @specialTokens
           @specialTokens[token].call(@, peekToken)
         else
-          " #{token}"
+          "#{token} "
     text
 
   specialTokens:

@@ -61,8 +61,7 @@ class GambogeView extends View
         {row} = @editor.getCursorBufferPosition()
         @editor.indentationForBufferRow(row)
       getIndentChars: =>
-        # TODO: get the real indent char...
-        '    '
+        (' ' for _ in [1..@editor.getTabLength()]).join('')
 
     # LISTEN TO ALL OF THE EVENTS!
     @registerEvents()
