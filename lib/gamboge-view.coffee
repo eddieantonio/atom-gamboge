@@ -15,11 +15,11 @@
 
 {Point, Range, View} = require 'atom'
 {$} = require 'space-pen'
-_ = require 'underscore-plus'
 
 
 {GhostTextView} = require './ghost-text-view'
 PredictionList = require './prediction-list'
+{InsertFormatter} = require './insert-formatter'
 
 # This class listens to editor events, forwarding state, and updating a model. In
 # effect, this is kind of a View/Controller in classical MVC.
@@ -38,8 +38,6 @@ NGRAM_ORDER = 4
 # https://github.com/atom/autocomplete/blob/master/lib/autocomplete-view.coffee
 module.exports =
 class GambogeView extends View
-  editor: null
-  buffer: null
   $ghostText: null
 
   lastChangeWasPredictionInsert: false
@@ -55,6 +53,16 @@ class GambogeView extends View
   initialize: (@editor) ->
     @editorView = $(atom.workspace.getView(@editor))
     @buffer = @editor.getBuffer()
+
+    # The insert formater needs to know how to get the current indenting
+    # level...
+    @insertFormatter = new InsertFormatter
+      getIndentLevel: =>
+        {row} = @editor.getCursorBufferPosition()
+        @editor.indentationForBufferRow(row)
+      getIndentChars: =>
+        # TODO: get the real indent char...
+        '    '
 
     # LISTEN TO ALL OF THE EVENTS!
     @registerEvents()
@@ -97,7 +105,7 @@ class GambogeView extends View
     n = tokens.length if all
     insertTokens = tokens.slice(0, n)
 
-    insertText = GambogeView.textFromTokens insertTokens
+    insertText = @insertFormatter.format insertTokens
     cursorPosition = @editor.getCursorBufferPosition()
 
     @ignoreNextChange()
@@ -114,22 +122,6 @@ class GambogeView extends View
       @predictionList.setPredictions predictions
 
 
-  @specialTokens:
-    '<NEWLINE>': (editor) -> '\n'
-    '<NL>':      (editor) -> '\n'
-    '<INDENT>':           -> ''
-    'DEDENT':             -> ''
-
-  # TODO: Extract the method into its own module!
-  # TODO: Make it take in the current indent level. Do a bunch of indentation
-  # thing!
-  @textFromTokens: (tokens) ->
-    text = ""
-    for token in tokens
-      text +=
-        if token of GambogeView.specialTokens then GambogeView.specialTokens[token]()
-        else " #{token}"
-    text
 
 
   # Using markers, shows the GhostText.
