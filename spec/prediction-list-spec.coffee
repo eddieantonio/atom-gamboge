@@ -14,22 +14,30 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 PredictionList = require '../lib/prediction-list'
+_ = require 'underscore-plus'
 
 describe 'PredictionList', ->
 
   describe '::constructor', ->
-  describe '::next', ->
-    it 'can be subscribed to'
-  describe '::prev', ->
-    it 'can be subscribed to'
-  describe '::setPredictions', ->
-    it 'can be subscribed to'
-  describe '::invalidate', ->
-    it 'can be subscribed to'
-  describe '::current', ->
+    it 'constructs with zero arguments', ->
+      expect(-> new PredictionList()).not.toThrow()
 
-  describe '.sortPredictions', ->
-    it 'should bias towards longer, but slightly less probable sequences', ->
+  describe '::next', ->
+    it 'emits a "change index" event'
+  describe '::prev', ->
+    it 'emits a "change index" event'
+  describe '::setPredictions', ->
+    it 'emits a "changed predictions" event'
+    it 'emits a "change index" event'
+  describe '::invalidate', ->
+    it 'emits a "predictions invalidates" event'
+  describe '::current', ->
+    it 'emits a "predictions invalidates" event'
+
+  describe '.createUnderlyingArray', ->
+    it 'sorts the list, biassing towards longer, but slightly less probable
+        sequences', ->
+
       predictions = [
         [ 0.337218, [ "in", "range" ] ]
         [ 0.345281, [ "in", "range", "(" ] ]
@@ -39,9 +47,20 @@ describe 'PredictionList', ->
         [ 2.40771, [ "in", "range", "(", "10", ")" ] ]
       ]
 
-      sortedPredictions = GambogeView.sortPredictions predictions
-      mostProbableTokens = sortedPredictions[0][1]
-      expect(mostProbableTokens.length).toBeGreaterThan 2
-      expect(mostProbableTokens).toContain 'in'
-      expect(mostProbableTokens).toContain 'range'
-      expect(mostProbableTokens).toContain '('
+      sortedPredictions = PredictionList.createUnderlyingArray predictions
+      likeliestSuggestion = sortedPredictions[0]
+      highlySuggestedTokens = likeliestSuggestion.tokens
+
+      expect(highlySuggestedTokens.length).toBeGreaterThan 2
+      expect(highlySuggestedTokens).toContain 'in'
+      expect(highlySuggestedTokens).toContain 'range'
+      expect(highlySuggestedTokens).toContain '('
+
+      # When I say "entropy", I really mean negative log probability or
+      # "surprisal" (self-information), but :/
+      # See also: http://en.wikipedia.org/wiki/Self-information
+      lowestOverallEntropy =
+        (_.min sortedPredictions, (s) -> s.entropy).entropy
+      expect(likeliestSuggestion.entropy).toBeGreaterThan lowestOverallEntropy
+
+
