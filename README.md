@@ -1,4 +1,8 @@
-# Gamboge
+# Gamboge: SCIENCE BRANCH!
+
+**Specs in this branch test the effectiveness of Gamboge against
+AutoComplete, AutoComplete+, and unassisted typing.**
+
 
 [![Build Status](https://travis-ci.org/eddieantonio/atom-gamboge.svg)](https://travis-ci.org/eddieantonio/atom-gamboge)
 
