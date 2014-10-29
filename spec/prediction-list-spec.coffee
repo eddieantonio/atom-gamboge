@@ -18,23 +18,37 @@ _ = require 'underscore-plus'
 
 describe 'PredictionList', ->
 
-  describe '::constructor', ->
+  describe '::constructor()', ->
     it 'constructs with zero arguments', ->
       expect(-> new PredictionList()).not.toThrow()
 
-  describe '::next', ->
-    it 'emits a "change index" event'
-  describe '::prev', ->
-    it 'emits a "change index" event'
-  describe '::setPredictions', ->
-    it 'emits a "changed predictions" event'
-    it 'emits a "change index" event'
-  describe '::invalidate', ->
-    it 'emits a "predictions invalidates" event'
-  describe '::current', ->
-    it 'emits a "predictions invalidates" event'
+  describe 'after instantation', ->
+    [predictionList] = []
 
-  describe '.createUnderlyingArray', ->
+    beforeEach ->
+      predictionList = new PredictionList
+
+    describe '::setPredictions()', ->
+      it 'emits a "changed predictions" event'
+      it 'emits a "change index" event'
+
+    describe '::next()', ->
+      it 'emits a "change index" event', ->
+      it 'wraps around when going around the of the list', ->
+
+    describe '::previous()', ->
+      it 'emits a "change index" event'
+
+    describe '::invalidate()', ->
+      it 'emits a "predictions invalidates" event'
+
+    describe '::current()', ->
+      it 'returns undefined when the prediction list is empty', ->
+        predictionList.setPredictions([])
+
+        expect(predictionList.current()).toBeUndefined()
+
+  describe '.createUnderlyingArray()', ->
     it 'sorts the list, biassing towards longer, but slightly less probable
         sequences', ->
 
