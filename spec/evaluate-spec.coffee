@@ -16,6 +16,8 @@
 
 # Empirical Evaluation
 
+{forEachTestFile, setTestEnvironment} = require './evaluate-helper'
+
 # Methodology
 
 describe "The empirical evaluation", ->
@@ -38,11 +40,26 @@ describe "The empirical evaluation", ->
 
   ## Tests
 
-  describe "Plain text", ->
-    it "should fail", ->
-      expect(false).toBe true
-  describe "AutoComplete", ->
-  describe "AutoComplete+", ->
-  describe "Gamboge", ->
-  describe "AutoComplete+Gamboge", ->
+  # Evaluation 1: 
+  #
+  #  * write a file
 
+  it "tests standard Atom text", ->
+    setTestEnvironment 'plain-text'
+    forEachTestFile (tokens) ->
+      count = 0
+      for token in tokens
+        count += switch
+          when token.cat is '<INDENT>' then 0
+          when token.cat is 'DEDENT' then 1
+          else token.text.length
+
+      keystrokes: count
+      
+  it "tests AutoComplete", ->
+    setTestEnvironment 'autocomplete'
+  it "tests AutoComplete+", ->
+    setTestEnvironment 'autocomplete-plus'
+  it "tests Gamboge", ->
+    setTestEnvironment 'gamboge'
+  it "tests AutoComplete+Gamboge"
