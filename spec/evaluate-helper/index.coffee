@@ -36,11 +36,11 @@ module.exports =
   # Internal: Run test function on each file, saving the results as json to
   # `results/{name}.json`.
   #
-  # name  - String. Name of the package under test.
-  # fn    - Function. It should returns an object with keys two keys:
-  #         keystrokes  - Integer. How many keystokes it takes to input the
-  #                       text.
-  #         text        - String. The generated string output.
+  # * `name` {String} of the package under test.
+  # * `fn`   {Function} that should return an object with two keys:
+  #     * `keystrokes` {Integer} of how many keystokes it takes to input the
+  #                     file.
+  #     * `text`       {String} of the generated output.
   #
   testEnvironment: (name, fn) ->
 
@@ -53,4 +53,3 @@ module.exports =
 
     fs.writeFile "results/#{name}.json", JSON.stringify({name, files}), (err) ->
       console.warn "Could not save results for #{name}!" if err?
-
