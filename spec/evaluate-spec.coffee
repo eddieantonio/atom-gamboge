@@ -16,7 +16,7 @@
 
 # Empirical Evaluation
 
-{forEachTestFile, setTestEnvironment} = require './evaluate-helper'
+{testEnvironment} = require './evaluate-helper'
 
 # Methodology
 
@@ -40,13 +40,12 @@ describe "The empirical evaluation", ->
 
   ## Tests
 
-  # Evaluation 1: 
+  # Evaluation 1:
   #
   #  * write a file
 
   it "tests standard Atom text", ->
-    setTestEnvironment 'plain-text'
-    forEachTestFile (tokens) ->
+    testEnvironment 'plain-text', (tokens) ->
       count = 0
       for token in tokens
         count += switch
@@ -55,11 +54,13 @@ describe "The empirical evaluation", ->
           else token.text.length
 
       keystrokes: count
-      
+      test: ""
+
   it "tests AutoComplete", ->
-    setTestEnvironment 'autocomplete'
+    testEnvironment 'autocomplete', (tokens) ->
+      keystrokes: -1
   it "tests AutoComplete+", ->
-    setTestEnvironment 'autocomplete-plus'
+    testEnvironment 'autocomplete-plus', (tokens) ->
   it "tests Gamboge", ->
-    setTestEnvironment 'gamboge'
+    testEnvironment 'gamboge', (tokens) ->
   it "tests AutoComplete+Gamboge"

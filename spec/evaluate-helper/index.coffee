@@ -13,6 +13,8 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+fs = require 'fs'
+
 fileTokens = [
   {text: 'for'   , cat: 'for'}
   {text: 'i'     , cat: 'NAME'}
@@ -28,22 +30,27 @@ fileTokens = [
   {text: ''      , cat: 'DEDENT'}
 ]
 
-currentEnv = undefined
-envs = []
 
 module.exports =
-  forEachTestFile: (fn) ->
-    console.assert currentEnv?
 
-    [fileTokens].forEach (tokens) ->
-      # TODO: allow for async/callback for fn.
-      answer = fn tokens
-      console.log "#{currentEnv} = #{answer.keystrokes}"
-      # TODO: Make this file match tokenized results!
-      expect(answer).toBeGreaterThan 0
+  # Internal: Run test function on each file, saving the results as json to
+  # `results/{name}.json`.
+  #
+  # name  - String. Name of the package under test.
+  # fn    - Function. It should returns an object with keys two keys:
+  #         keystrokes  - Integer. How many keystokes it takes to input the
+  #                       text.
+  #         text        - String. The generated string output.
+  #
+  testEnvironment: (name, fn) ->
 
-    currentEnv = undefined
+    files =
+      [fileTokens].map (tokens) ->
+        # TODO: allow for async/callback for fn.
+        answer = fn(tokens)
+        expect(answer.keystrokes).toBeGreaterThan 0
+        # TODO: Make this file match tokenized results!
 
-  setTestEnvironment: (name) ->
-    currentEnv = name
-    envs[name] ?= []
+    fs.writeFile "results/#{name}.json", JSON.stringify({name, files}), (err) ->
+      console.warn "Could not save results for #{name}!" if err?
+
