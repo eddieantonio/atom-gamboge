@@ -51,5 +51,12 @@ module.exports =
         expect(answer.keystrokes).toBeGreaterThan 0
         # TODO: Make this file match tokenized results!
 
+        # The process should be:
+        #
+        # normalized := file | tokenizer
+        # expect that (normalized | typer | .text | tokenizer) === normalized
+        # TODO: Write simple Python tokenizer script that returns results in
+        # JSON.
+
     fs.writeFile "results/#{name}.json", JSON.stringify({name, files}), (err) ->
       console.warn "Could not save results for #{name}!" if err?
