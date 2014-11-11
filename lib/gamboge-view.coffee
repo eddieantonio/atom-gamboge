@@ -50,8 +50,8 @@ class GambogeView extends View
     # TODO: look-up these classes! overlay from-top
     @div class: 'gamboge hidden'
 
-  initialize: (@editor) ->
-    @editorView = $(atom.workspace.getView(@editor))
+  initialize: (@editorView) ->
+    @editor = @editorView.getModel()
     @buffer = @editor.getBuffer()
 
     # The insert formater needs to know how to get the current indenting
