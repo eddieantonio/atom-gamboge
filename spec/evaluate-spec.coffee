@@ -22,26 +22,22 @@
 # Methodology
 
 fdescribe "The empirical evaluation", ->
-  [editor, typeKey] = []
+  [editorView, typeKey] = []
 
   ## Setup
-
   beforeEach ->
-    # Need the Atom editor to initialize before doing the thing...
-    workspaceView = atom.workspaceView = new WorkspaceView
-    workspace = atom.workspace = workspaceView.getModel()
-    workspaceView.attachToDom()
+    atom.workspaceView = new WorkspaceView
 
-    waitsForPromise -> atom.workspace.open('sample.py').then (e) ->
-      editor = e
-      workspaceView.simulateDomAttachment()
-
-    # And we need Gamboge to start-up beforehand...
     waitsForPromise ->
-      atom.packages.activatePackage('gamboge')
+      atom.workspace.open('sample.py')
+
+    # Need this for indentation!
+    waitsForPromise ->
+      atom.packages.activatePackage('language-python')
 
     runs ->
-      typeKey = keyTyper(workspaceView)
+      atom.config.set('editor.autoIndent', true)
+      atom.workspaceView.simulateDomAttachment()
 
   ## Tests
 
@@ -49,40 +45,51 @@ fdescribe "The empirical evaluation", ->
   #
   #  * write a file with only indent assistance.
 
-  it "tests unassisted typing in Atom", ->
-    testEnvironment 'plain-text', editor, (tokens) ->
-      count = 0
-      indent = ''
-      file = ''
-      for token in tokens
-        count += switch token.category
-          when 'INDENT'
-            # Auto-indent means no keypress.
-            0
-          when 'DEDENT'
-            typeKey 'backspace'
-            1
-          when 'NEWLINE', 'NL'
-            typeKey 'enter'
-            1
-          else
-            {text} = token
-            typeKey(text.charAt(i)) for i in [0...text.length]
-            typeKey 'space'
-            token.text.length
+  describe 'Atom', ->
+    it "tests unassisted typing in Atom", ->
+      testEnvironment 'plain-text', (tokens) ->
+        count = 0
+        indent = ''
+        file = ''
+        expect(@editor.getTabText().length).toBeGreaterThan 0
+        for token in tokens
+          count += switch token.category
+            when 'INDENT'
+              # Auto-indent means no key press.
+              0
+            when 'DEDENT'
+              @editor.backspace()
+              1
+            when 'NEWLINE', 'NL'
+              @editor.insertNewlineBelow()
+              1
+            when 'ENDMARKER'
+              0
+            else
+              @editor.insertText token.text
+              @editor.insertText ' '
+              token.text.length
 
-      keystrokes: count
-
+        keystrokes: count
 
   # Evaluation 2:
   #
   #  * write a file using "best guess" autocomplete+
-  it "tests AutoComplete+"
+  describe 'AutoComplete+', ->
+    it "tests AutoComplete+"
 
   # Evaluation 3:
   #
   #  * Write a file using Gamboge.
-  it "tests Gamboge"
-  it "tests AutoComplete+Gamboge"
-  it "tests AutoComplete"
+  describe 'Gamboge', ->
+    beforeEach ->
+      waitsForPromise ->
+        atom.packages.activatePackage('gamboge')
+      runs ->
+
+    it "tests Gamboge"
+  
+  describe 'Optional Tests', ->
+    it "tests AutoComplete+Gamboge"
+    it "tests AutoComplete"
 

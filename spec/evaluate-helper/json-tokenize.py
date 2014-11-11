@@ -17,8 +17,6 @@ def objectize(category, text, start, end, logical_line):
     return OrderedDict([
         ('category', token.tok_name[category]),
         ('text', text),
-        ('start', start),
-        ('end', end)
     ])
 
 if __name__ == '__main__':

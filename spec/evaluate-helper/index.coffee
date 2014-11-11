@@ -33,19 +33,22 @@ module.exports =
   #                     file.
   #     * `text`       {String} of the generated output.
   #
-  testEnvironment: (name, editor, fn) ->
-    expect(editor).toBeTruthy()
+  testEnvironment: (name, fn) ->
+
+    @editor =
+       atom.workspaceView.getActiveView().getEditor()
+
+    expect(@editor).toBeTruthy()
     files =
       [fileTokens].map (canonicalTokens) ->
         # Empty the text editor...
-        editor.setText ''
+        @editor.setText ''
 
         # TODO: allow for async/callback for fn.
-        answer = fn(canonicalTokens)
-        expect(answer.keystrokes).toBeGreaterThan 0
+        answer = fn.call(@, canonicalTokens)
 
-        text = editor.getText()
-        expect(text.length).toBeGreaterThan 0
+        text = @editor.getText()
+        console.log text
 
         # The verification process is:
         #
