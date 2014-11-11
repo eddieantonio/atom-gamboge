@@ -22,7 +22,7 @@ describe 'PredictionList', ->
     it 'constructs with zero arguments', ->
       expect(-> new PredictionList()).not.toThrow()
 
-  describe 'after instantation', ->
+  describe 'after instantiation', ->
     [predictionList] = []
 
     beforeEach ->

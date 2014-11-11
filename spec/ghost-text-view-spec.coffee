@@ -33,7 +33,15 @@ describe "HackyGhostView", ->
 
 
   describe '::constructor()', ->
-    it 'subscribes to PredictionList cursor events'
+    [pList, editor] = []
+    beforeEach ->
+      pList = new PredictionList
+      editor = $editor.getModel()
+      
+    it 'subscribes to PredictionList cursor events', ->
+      spyOn pList, 'onDidChangePredictions'
+      spyOn editor, 'onDidChangePredictions'
+
     it 'subscribes to TextEditor events'
 
   describe 'interaction with PredictionList', ->

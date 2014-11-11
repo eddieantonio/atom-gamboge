@@ -13,7 +13,8 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-GambogeView = require '../lib/gamboge-view'
+EditorSpy = require '../lib/editor-spy'
+TextEditorView = require 'atom'
 
 describe "EditorSpy", ->
 
@@ -21,17 +22,27 @@ describe "EditorSpy", ->
     atom.workspaceView = workspaceView = new WorkspaceView
     atom.workspaceView.attachToDom()
 
-    waitsForPromise ->
-      atom.packages.activatePackage('gamboge')
-
     runs ->
       atom.workspaceView.simulateDomAttachment()
 
 
   describe '::constructor()', ->
     describe 'event subscription', ->
-      it 'subscribes to PredictionList cursor events'
-      it 'subscribes to TextEditor events'
+      [predictionList, editor] = []
+      beforeEach ->
+        predictionList = new PredictionList
+        editor = (new TextEditorView).getModel()
+
+      it 'subscribes to PredictionList change prediction events', ->
+        spyOn predictionList, 'onChangePrediction'
+        new EditorSpy(predictionList, editor)
+        expect(predictionList.onChangePrediction).toHaveBeenCalled()
+
+      it 'subscribes to TextEditor events', ->
+        spyOn editor, 'onDidChange'
+        spyOn editor, 'onStopChanging'
+
+        expect(editor.onDidChange.length or editor.onStopChanging.length).toBe 1
 
   describe 'when gamboge:next-prediction is triggered', ->
     it 'acknowledges next prediction requests'

@@ -13,26 +13,17 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-{WorkspaceView} = require 'atom'
+PredictionList = require '../lib/text-formatter'
 
-describe "Gamboge", ->
-  [workspaceView] = []
+describe 'TextFormatter', ->
 
-  beforeEach ->
-    atom.workspaceView = workspaceView = new WorkspaceView
-    atom.workspaceView.attachToDom()
+  describe '::constructor()', ->
+    it 'constructs with zero arguments', ->
+      expect(-> new PredictionList()).not.toThrow()
 
-    runs ->
-      atom.workspaceView.simulateDomAttachment()
+  describe 'after instantiation', ->
+    [formatter] = []
 
-  describe 'upon activation', ->
     beforeEach ->
-      waitsForPromise ->
-        atom.packages.activatePackage('gamboge')
-
-    describe 'when an editor is created', ->
-      it 'binds the appropriate objects to it.'
-
-    describe 'when an editor is destroyed', ->
-      it 'cleans up all subscriptions associated with it'
+      formatter = new TextFormatter
 
