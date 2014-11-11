@@ -22,13 +22,22 @@ describe "Gamboge", ->
     atom.workspaceView = workspaceView = new WorkspaceView
     atom.workspaceView.attachToDom()
 
-    waitsForPromise ->
-      atom.packages.activatePackage('gamboge')
-
     runs ->
       atom.workspaceView.simulateDomAttachment()
 
-  describe "when the gamboge:complete is triggered", ->
-    it 'should insert the first suggested token to the buffer'
-  describe "when the gamboge:complete-all is triggered", ->
-    it 'should add *all* of suggested tokens to the buffer'
+
+  describe '::activate()', ->
+    it 'listens to all editor events.', ->
+      waitsForPromise ->
+        atom.packages.activatePackage('gamboge')
+
+  describe 'upon activation', ->
+    beforeEach ->
+      waitsForPromise ->
+        atom.packages.activatePackage('gamboge')
+
+    describe 'when an editor is created', ->
+      it 'binds the appropriate objects to it.'
+
+    describe 'when an editor is destroyed', ->
+      it 'cleans up all subscriptions associated with it'

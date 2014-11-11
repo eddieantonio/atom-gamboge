@@ -24,12 +24,11 @@ module.exports =
   activate: ->
     GambogeView = require './gamboge-view'
 
-    console.log 'Activating Gamboge...'
     # Activate on each editor.
-    @editorSubcription = atom.workspace.observeTextEditors (editor) =>
-      return if editor.mini
-      gambogeView = new GambogeView(editor)
-      editor.onDidDestroy =>
+    @editorSubcription = atom.workspaceView.eachEditorView (editorView) =>
+      return if editorView.mini or not editorView.attached
+      gambogeView = new GambogeView(editorView)
+      editorView.getModel().onDidDestroy =>
         # Clean up the event dispatcher.
         gambogeView.remove()
 
