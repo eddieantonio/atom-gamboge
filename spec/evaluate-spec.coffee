@@ -16,27 +16,32 @@
 
 # Empirical Evaluation
 
-{testEnvironment} = require './evaluate-helper'
+{WorkspaceView} = require 'atom'
+{testEnvironment, keyTyper} = require './evaluate-helper'
 
 # Methodology
 
 fdescribe "The empirical evaluation", ->
-  [workspaceView] = []
+  [editor, typeKey] = []
 
   ## Setup
 
   beforeEach ->
     # Need the Atom editor to initialize before doing the thing...
-    {WorkspaceView} = require 'atom'
     workspaceView = atom.workspaceView = new WorkspaceView
+    workspace = atom.workspace = workspaceView.getModel()
     workspaceView.attachToDom()
+
+    waitsForPromise -> atom.workspace.open('sample.py').then (e) ->
+      editor = e
+      workspaceView.simulateDomAttachment()
 
     # And we need Gamboge to start-up beforehand...
     waitsForPromise ->
       atom.packages.activatePackage('gamboge')
 
     runs ->
-      workspaceView.simulateDomAttachment()
+      typeKey = keyTyper(workspaceView)
 
   ## Tests
 
@@ -45,28 +50,28 @@ fdescribe "The empirical evaluation", ->
   #  * write a file with only indent assistance.
 
   it "tests unassisted typing in Atom", ->
-    testEnvironment 'plain-text', (tokens) ->
+    testEnvironment 'plain-text', editor, (tokens) ->
       count = 0
       indent = ''
       file = ''
       for token in tokens
         count += switch token.category
           when 'INDENT'
-            indent = "    #{indent}"
+            # Auto-indent means no keypress.
             0
           when 'DEDENT'
-            indent = indent.substr(4)
+            typeKey 'backspace'
             1
           when 'NEWLINE', 'NL'
-            file = "#{file}\n#{indent}"
+            typeKey 'enter'
             1
           else
-            console.log "[#{token.category}]: #{token.text}]"
-            file = if file then "#{file} #{token.text}" else token.text
+            {text} = token
+            typeKey(text.charAt(i)) for i in [0...text.length]
+            typeKey 'space'
             token.text.length
 
       keystrokes: count
-      text: file
 
 
   # Evaluation 2:
@@ -80,3 +85,4 @@ fdescribe "The empirical evaluation", ->
   it "tests Gamboge"
   it "tests AutoComplete+Gamboge"
   it "tests AutoComplete"
+

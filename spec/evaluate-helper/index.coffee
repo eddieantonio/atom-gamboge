@@ -15,7 +15,9 @@
 
 fs = require 'fs'
 
+{$} = require 'space-pen'
 PythonShell = require 'python-shell'
+keyvent = require './keyvent'
 
 # Load the tokens from the sample commited.
 fileTokens = require './sample'
@@ -31,20 +33,27 @@ module.exports =
   #                     file.
   #     * `text`       {String} of the generated output.
   #
-  testEnvironment: (name, fn) ->
+  testEnvironment: (name, editor, fn) ->
+    expect(editor).toBeTruthy()
     files =
       [fileTokens].map (canonicalTokens) ->
+        # Empty the text editor...
+        editor.setText ''
+
         # TODO: allow for async/callback for fn.
         answer = fn(canonicalTokens)
         expect(answer.keystrokes).toBeGreaterThan 0
 
+        text = editor.getText()
+        expect(text.length).toBeGreaterThan 0
+
         # The verification process is:
         #
         # normalized := file | tokenizer
-        # expect that (normalized | typer | .text | tokenizer) === normalized
+        # expect that (normalized | typer | tokenizer) === normalized
         tokens = null
         runs ->
-          tokenize answer.text, (err, result) ->
+          tokenize text, (err, result) ->
             expect(err).toBeFalsy()
             tokens = result
 
@@ -55,6 +64,34 @@ module.exports =
 
     fs.writeFile "results/#{name}.json", JSON.stringify({name, files}), (err) ->
       console.warn "Could not save results for #{name}!" if err?
+
+  # Internal: Given a workspaceView, returns a function that will type in its
+  # hidden text box, as if the user were typing themselves!
+  #
+  # * `name` {String} of the package under test.
+  # * `fn`   {Function} that should return an object with two keys:
+  #     * `keystrokes` {Integer} of how many keystokes it takes to input the
+  #                     file.
+  #     * `text`       {String} of the generated output.
+  #
+  keyTyper: ($view) ->
+    $inp = $view.find('input.hidden-input')
+    expect($inp.length).toBe 1
+
+    element = $inp.get(0)
+    context = keyvent.on(element)
+
+    (key) ->
+      # Delegate to keyvent.js
+      context.down(key)
+
+    ###
+    (key) ->
+      event = new jQuery.Event('keydown', bubbles: true)
+      event.keyPress = event.which = key.charCodeAt(0)
+      $inp.trigger(event)
+      event
+    ###
 
 
 tokenize = (text, done) ->
