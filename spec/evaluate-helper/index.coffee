@@ -47,7 +47,11 @@ module.exports =
         # TODO: allow for async/callback for fn.
         answer = fn.call(@, canonicalTokens)
 
+
+        # XXX: Uh.... get rid of a newline...
+        @editor.backspace()
         text = @editor.getText()
+
         console.log text
 
         # The verification process is:
@@ -63,7 +67,11 @@ module.exports =
         waitsFor((-> tokens?), 'Expected Python script to terminate.', 500)
 
         runs ->
-          expect(tokens).toEqual(canonicalTokens)
+          util = require 'util'
+          diff =  require('deep-diff').diff(canonicalTokens, tokens)
+          console.log(util.inspect(diff, depth: null))
+          expect(yes).toBe true
+          #expect(tokens).toEqual(canonicalTokens)
 
     fs.writeFile "results/#{name}.json", JSON.stringify({name, files}), (err) ->
       console.warn "Could not save results for #{name}!" if err?
@@ -87,15 +95,6 @@ module.exports =
     (key) ->
       # Delegate to keyvent.js
       context.down(key)
-
-    ###
-    (key) ->
-      event = new jQuery.Event('keydown', bubbles: true)
-      event.keyPress = event.which = key.charCodeAt(0)
-      $inp.trigger(event)
-      event
-    ###
-
 
 tokenize = (text, done) ->
   PythonShell.defaultOptions =
