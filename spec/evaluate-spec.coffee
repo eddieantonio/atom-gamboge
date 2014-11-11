@@ -20,7 +20,7 @@
 
 # Methodology
 
-describe "The empirical evaluation", ->
+fdescribe "The empirical evaluation", ->
   [workspaceView] = []
 
   ## Setup
@@ -42,25 +42,41 @@ describe "The empirical evaluation", ->
 
   # Evaluation 1:
   #
-  #  * write a file
+  #  * write a file with only indent assistance.
 
-  it "tests standard Atom text", ->
+  it "tests unassisted typing in Atom", ->
     testEnvironment 'plain-text', (tokens) ->
       count = 0
+      indent = ''
+      file = ''
       for token in tokens
-        count += switch
-          when token.cat is '<INDENT>' then 0
-          when token.cat is 'DEDENT' then 1
-          else token.text.length
+        count += switch token.category
+          when 'INDENT'
+            indent = "    #{indent}"
+            0
+          when 'DEDENT'
+            indent = indent.substr(4)
+            1
+          when 'NEWLINE', 'NL'
+            file = "#{file}\n#{indent}"
+            1
+          else
+            console.log "[#{token.category}]: #{token.text}]"
+            file = if file then "#{file} #{token.text}" else token.text
+            token.text.length
 
       keystrokes: count
-      test: ""
+      text: file
 
-  it "tests AutoComplete", ->
-    testEnvironment 'autocomplete', (tokens) ->
-      keystrokes: -1
-  it "tests AutoComplete+", ->
-    testEnvironment 'autocomplete-plus', (tokens) ->
-  it "tests Gamboge", ->
-    testEnvironment 'gamboge', (tokens) ->
+
+  # Evaluation 2:
+  #
+  #  * write a file using "best guess" autocomplete+
+  it "tests AutoComplete+"
+
+  # Evaluation 3:
+  #
+  #  * Write a file using Gamboge.
+  it "tests Gamboge"
   it "tests AutoComplete+Gamboge"
+  it "tests AutoComplete"

@@ -6,8 +6,9 @@ Tokenizes Python source to JSON.
 
 import fileinput
 import json
+import sys
 import token
-import tokenize
+import flexible_tokenize as tokenize
 
 from collections import OrderedDict
 
@@ -21,6 +22,6 @@ def objectize(category, text, start, end, logical_line):
     ])
 
 if __name__ == '__main__':
-    tokens = tokenize.generate_tokens(fileinput.input().readline)
+    tokens = tokenize.generate_tokens(sys.stdin.readline)
     token_list = [objectize(*tup) for tup in tokens]
     print(json.dumps(token_list))

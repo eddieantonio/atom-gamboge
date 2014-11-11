@@ -12,5 +12,8 @@
     "event-kit": "^0.7.2",
     "space-pen": "^3.8.0",
     "underscore-plus": "1.x"
+  },
+  "devDependencies": {
+    "python-shell": "0.0.3"
   }
 }

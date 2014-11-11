@@ -15,21 +15,10 @@
 
 fs = require 'fs'
 
-fileTokens = [
-  {text: 'for'   , cat: 'for'}
-  {text: 'i'     , cat: 'NAME'}
-  {text: 'in'    , cat: 'in'}
-  {text: 'range' , cat: 'NAME'}
-  {text: '('     , cat: '('}
-  {text: '10'    , cat: 'NUMBER'}
-  {text: ')'     , cat: ')'}
-  {text: ':'     , cat: ':'}
-  {text: '\n'    , cat: '<NEWLINE>'}
-  {text: '     ' , cat: '<INDENT>'}
-  {text: 'pass'  , cat: 'pass'}
-  {text: ''      , cat: 'DEDENT'}
-]
+PythonShell = require 'python-shell'
 
+# Load the tokens from the sample commited.
+fileTokens = require './sample'
 
 module.exports =
 
@@ -43,20 +32,42 @@ module.exports =
   #     * `text`       {String} of the generated output.
   #
   testEnvironment: (name, fn) ->
-
     files =
-      [fileTokens].map (tokens) ->
+      [fileTokens].map (canonicalTokens) ->
         # TODO: allow for async/callback for fn.
-        answer = fn(tokens)
+        answer = fn(canonicalTokens)
         expect(answer.keystrokes).toBeGreaterThan 0
-        # TODO: Make this file match tokenized results!
 
-        # The process should be:
+        # The verification process is:
         #
         # normalized := file | tokenizer
         # expect that (normalized | typer | .text | tokenizer) === normalized
-        # TODO: Write simple Python tokenizer script that returns results in
-        # JSON.
+        tokens = null
+        runs ->
+          tokenize answer.text, (err, result) ->
+            expect(err).toBeFalsy()
+            tokens = result
+
+        waitsFor((-> tokens?), 'Expected Python script to terminate.', 500)
+
+        runs ->
+          expect(tokens).toEqual(canonicalTokens)
 
     fs.writeFile "results/#{name}.json", JSON.stringify({name, files}), (err) ->
       console.warn "Could not save results for #{name}!" if err?
+
+
+tokenize = (text, done) ->
+  PythonShell.defaultOptions =
+    scriptPath: './spec/evaluate-helper/'
+
+  shell = new PythonShell("json-tokenize.py", mode: 'text')
+
+  result = ''
+  shell.stdout.on 'data', (message) ->
+    result += '' + message
+
+  shell.send(text).end (err) ->
+    if err? then done(err)
+    else done(err, JSON.parse(result))
+
