@@ -81,7 +81,7 @@ fdescribe 'TextFormatter', ->
         expect(text).toBe lines 'return self ', '    pass '
 
   describe '.makeEditorIndentSpy()', ->
-    [editor] = []
+    [editor, indentSpy] = []
 
     beforeEach ->
       waitsForPromise ->
@@ -90,10 +90,39 @@ fdescribe 'TextFormatter', ->
         editorView = new TextEditorView({})
         editor = editorView.getModel()
 
-    it "creates an object that TextFormatter's constructor craves", ->
-      indentSpy = TextFormatter.makeEditorIndentSpy(editor)
+        indentSpy = TextFormatter.makeEditorIndentSpy(editor)
 
+    it "creates an object that TextFormatter's constructor craves", ->
       expect(indentSpy.getIndentChars).toBeDefined()
       expect(indentSpy.getIndentLevel).toBeDefined()
 
       expect(-> new TextFormatter(indentSpy)).not.toThrow()
+
+    it 'returns appropriate values from the text editor', ->
+      expect(editor.getIndentChars).toBe '    '
+
+      editor.setText lines 'class Foo():',
+                           '    def __init__(self):',
+                           '        pass',
+
+      # On the first line; unindented.
+      editor.moveToTop()
+      expect(indentSpy.getIndentLevel()).toBe 0
+
+      # In the `def __init__` line.
+      editor.moveUp()
+      expect(indentSpy.getIndentLevel()).toBe 1
+
+      # On the bottom, most indented line
+      editor.moveToBottom()
+      expect(indentSpy.getIndentLevel()).toBe 2
+
+      # Almost the same, but starting after the indent on the second line.
+      editor.setText lines 'class Foo():',
+                           '    def __init__(self):',
+                           '        pass',
+                           '    '
+
+      editor.moveToBottom()
+      expect(indentSpy.getIndentLevel()).toBe 1
+
