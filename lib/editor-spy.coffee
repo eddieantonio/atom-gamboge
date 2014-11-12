@@ -17,9 +17,9 @@
 {$} = require 'space-pen'
 
 
-{GhostTextView} = require './ghost-text-view'
+{GhostTextView} = require './hacky-ghost-text-view'
 PredictionList = require './prediction-list'
-{InsertFormatter} = require './insert-formatter'
+TextFormatter = require './text-formatter'
 
 # This class listens to editor events, forwarding state, and updating a model. In
 # effect, this is kind of a View/Controller in classical MVC.

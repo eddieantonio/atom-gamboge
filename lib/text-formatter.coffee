@@ -27,7 +27,7 @@ newlineHandler =  (peek) ->
   "\n#{indent}"
 
 # Formats tokens! Especially useful
-class InsertFormatter
+class TextFormatter
   # Requires a TextEditor.
   constructor: ({@getIndentLevel, @getIndentChars}) ->
 
@@ -52,5 +52,6 @@ class InsertFormatter
     # This is a no-op since the newline handles this stuff already!
     'DEDENT': () -> ''
 
+  @makeEditorIndentSpy: ->
 
-module.exports = {InsertFormatter}
+module.exports = TextFormatter

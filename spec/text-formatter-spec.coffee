@@ -13,17 +13,74 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-PredictionList = require '../lib/text-formatter'
+TextFormatter = require '../lib/text-formatter'
+{TextEditorView} = require 'atom'
 
-describe 'TextFormatter', ->
+# Test Helper: Joins all its arguments with newlines.
+lines = -> Array::join.call(arguments, '\n')
+
+fdescribe 'TextFormatter', ->
+  [infoSpy] = []
+
+  beforeEach ->
+    infoSpy = jasmine.createSpyObj 'infoSpy',
+      ['getIndentLevel', 'getIndentChars']
+    infoSpy.getIndentChars.andReturn('  ')
 
   describe '::constructor()', ->
-    it 'constructs with zero arguments', ->
-      expect(-> new PredictionList()).not.toThrow()
+    it 'constructs with an editor info object', ->
+      expect(-> new TextFormatter(infoSpy)).not.toThrow()
 
   describe 'after instantiation', ->
     [formatter] = []
 
-    beforeEach ->
-      formatter = new TextFormatter
 
+    beforeEach ->
+      formatter = new TextFormatter(infoSpy)
+
+    describe '::format()', ->
+      it 'outputs normal tokens as is', ->
+        text = formatter.format(['for', 'i', 'in', 'range', '(', '10', ')'])
+        expect(text).toEqual ' for i in range ( 10 ) '
+
+      it 'properly indents lines', ->
+        infoSpy.getIndentLevel.andReturn(0)
+        tokens = ['while', '1', ':', '<NEWLINE>', '<INDENT>', 'pass']
+        text = formatter.format(tokens)
+        expect(text).toBe lines(' while 1 : ',
+                                '  pass ')
+
+      it 'handles being indented already', ->
+        infoSpy.getIndentLevel.andReturn(2)
+        tokens = 'while 1 : <NEWLINE> <INDENT> if True :'.split(' ')
+        text = formatter.format(tokens)
+        expect(text).toBe lines(' while 1 : ',
+                                '      if True : ')
+
+      it 'handles double indents', ->
+        # Start 2 indents in...
+        infoSpy.getIndentLevel.andReturn(2)
+        tokens = 'while 1 : <NEWLINE> <INDENT>
+                  if True : <NEWLINE> <INDENT> break'.split(' ')
+        text = formatter.format(tokens)
+        expect(text).toBe lines(' while 1 : ',
+                                '      if True : ',
+                                '        break ')
+
+  describe '.makeEditorIndentSpy()', ->
+    [editor] = []
+
+    beforeEach ->
+      waitsForPromise ->
+        atom.packages.activatePackage('language-python')
+      runs ->
+        editorView = new TextEditorView({})
+        editor = editorView.getModel()
+
+    it "creates an object that TextFormatter's constructor craves", ->
+      indentSpy = TextFormatter.makeEditorIndentSpy(editor)
+
+      expect(indentSpy.getIndentChars).toBeDefined()
+      expect(indentSpy.getIndentLevel).toBeDefined()
+
+      expect(-> new TextFormatter(indentSpy)).not.toThrow()
