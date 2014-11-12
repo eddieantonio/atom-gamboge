@@ -23,17 +23,17 @@ Model. Manages the list of predictions for the current buffer position.
 
 # `./hacky-ghost-text-view`
 
-View. Manipulates the `TextEdtitorView` DOM to display predictions inline
+View. Manipulates the text editor DOM to display predictions inline
 in the editor.
 
 # `./status-view`
 
-View. Optionally overlays prediction information.
+View. Overlays information about the current predictions.
 
 # `./text-formatter`
 
-Utilities for determining how to format predicted tokens, both in
-inserted text, and in privies.
+Utilities for determining how to format whitespace between tokens, both in
+inserted text, and in ghost-text previews.
 
 [uml-edit]: http://yuml.me/edit/3f73bfb8
 [uml-svg]: http://yuml.me/3f73bfb8.svg
