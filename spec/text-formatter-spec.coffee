@@ -18,6 +18,7 @@ TextFormatter = require '../lib/text-formatter'
 
 # Test Helper: Joins all its arguments with newlines.
 lines = -> Array::join.call(arguments, '\n')
+asTokens = (str) -> str.split(' ')
 
 fdescribe 'TextFormatter', ->
   [infoSpy] = []
@@ -41,31 +42,43 @@ fdescribe 'TextFormatter', ->
     describe '::format()', ->
       it 'outputs normal tokens as is', ->
         text = formatter.format(['for', 'i', 'in', 'range', '(', '10', ')'])
-        expect(text).toEqual ' for i in range ( 10 ) '
+        expect(text).toBe 'for i in range ( 10 ) '
 
       it 'properly indents lines', ->
         infoSpy.getIndentLevel.andReturn(0)
         tokens = ['while', '1', ':', '<NEWLINE>', '<INDENT>', 'pass']
         text = formatter.format(tokens)
-        expect(text).toBe lines(' while 1 : ',
-                                '  pass ')
+        expect(text).toBe lines 'while 1 : ',
+                                '  pass '
 
       it 'handles being indented already', ->
         infoSpy.getIndentLevel.andReturn(2)
-        tokens = 'while 1 : <NEWLINE> <INDENT> if True :'.split(' ')
+        tokens = asTokens 'while 1 : <NEWLINE> <INDENT> if True :'
         text = formatter.format(tokens)
-        expect(text).toBe lines(' while 1 : ',
-                                '      if True : ')
+        expect(text).toBe lines 'while 1 : ',
+                                '      if True : '
 
       it 'handles double indents', ->
         # Start 2 indents in...
         infoSpy.getIndentLevel.andReturn(2)
-        tokens = 'while 1 : <NEWLINE> <INDENT>
-                  if True : <NEWLINE> <INDENT> break'.split(' ')
+        tokens = asTokens 'while 1 : <NEWLINE> <INDENT>
+                           if True : <NEWLINE> <INDENT> break'
         text = formatter.format(tokens)
-        expect(text).toBe lines(' while 1 : ',
+        expect(text).toBe lines 'while 1 : ',
                                 '      if True : ',
-                                '        break ')
+                                '        break '
+
+      it 'handles dedents', ->
+        infoSpy.getIndentLevel.andReturn(1)
+        tokens = asTokens 'return self <NEWLINE> DEDENT pass'
+        text = formatter.format(tokens)
+        expect(text).toBe lines 'return self ', 'pass '
+
+      it 'handles dedents when already deeply indented', ->
+        infoSpy.getIndentLevel.andReturn(3)
+        tokens = asTokens 'return self <NEWLINE> DEDENT pass'
+        text = formatter.format(tokens)
+        expect(text).toBe lines 'return self ', '    pass '
 
   describe '.makeEditorIndentSpy()', ->
     [editor] = []
