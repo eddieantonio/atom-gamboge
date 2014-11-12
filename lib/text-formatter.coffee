@@ -49,15 +49,29 @@ class TextFormatter
   specialTokens:
     '<NEWLINE>': TextFormatter::handleNewline
     '<NL>': TextFormatter::handleNewline
-    # Simply emit the indent string...
     '<INDENT>': ->
       @additionalIndent++
+      # Simply emits the indent string.
       @getIndentChars()
-    # This is a no-op since the newline handles this stuff already!
     'DEDENT': ->
       @additionalIndent--
+      console.assert @additionalIndent >= 0
+      # Nothing to output since handleNewline's already got this.
       ''
 
-  @makeEditorIndentSpy: ->
+  # Internal: Returns an 'indent spy' based on the given TextEditor instance.
+  #
+  # An indent spy is an object that contains these properties:
+  #
+  #  * getIndentChars: {Function} that returns the string used to indent a
+  #                    line. For example, a tab for tab indents, or two
+  #                    spaces for 2 space indents
+  #  * getIndentLevel: {Function} that returns the indent level for the
+  #                    current buffer line.
+  @makeEditorIndentSpy: (editor) ->
+    getIndentChars: editor.getTabText.bind(editor)
+    getIndentLevel: ->
+      {row} = editor.getCursorBufferPosition()
+      editor.indentationForBufferRow(row)
 
 module.exports = TextFormatter

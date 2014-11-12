@@ -13,14 +13,16 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+
+{WorkspaceView} = require 'atom'
+
 TextFormatter = require '../lib/text-formatter'
-{TextEditorView} = require 'atom'
 
 # Test Helper: Joins all its arguments with newlines.
 lines = -> Array::join.call(arguments, '\n')
 asTokens = (str) -> str.split(' ')
 
-fdescribe 'TextFormatter', ->
+describe 'TextFormatter', ->
   [infoSpy] = []
 
   beforeEach ->
@@ -84,11 +86,17 @@ fdescribe 'TextFormatter', ->
     [editor, indentSpy] = []
 
     beforeEach ->
+      atom.workspaceView = new WorkspaceView
+      atom.workspace = atom.workspaceView.model
+
       waitsForPromise ->
         atom.packages.activatePackage('language-python')
+
+      waitsForPromise ->
+        atom.workspace.open('sample.py')
+
       runs ->
-        editorView = new TextEditorView({})
-        editor = editorView.getModel()
+        editor = atom.workspace.getActiveEditor()
 
         indentSpy = TextFormatter.makeEditorIndentSpy(editor)
 
@@ -99,7 +107,7 @@ fdescribe 'TextFormatter', ->
       expect(-> new TextFormatter(indentSpy)).not.toThrow()
 
     it 'returns appropriate values from the text editor', ->
-      expect(editor.getIndentChars).toBe '    '
+      expect(indentSpy.getIndentChars()).toBe '    '
 
       editor.setText lines 'class Foo():',
                            '    def __init__(self):',
@@ -110,7 +118,7 @@ fdescribe 'TextFormatter', ->
       expect(indentSpy.getIndentLevel()).toBe 0
 
       # In the `def __init__` line.
-      editor.moveUp()
+      editor.moveDown()
       expect(indentSpy.getIndentLevel()).toBe 1
 
       # On the bottom, most indented line

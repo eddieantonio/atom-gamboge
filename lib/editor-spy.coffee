@@ -56,12 +56,8 @@ class GambogeView extends View
 
     # The insert formater needs to know how to get the current indenting
     # level...
-    @insertFormatter = new InsertFormatter
-      getIndentLevel: =>
-        {row} = @editor.getCursorBufferPosition()
-        @editor.indentationForBufferRow(row)
-      getIndentChars: =>
-        (' ' for _ in [1..@editor.getTabLength()]).join('')
+    indentSpy = TextFormatter.makeEditorIndentSpy(@editor)
+    @insertFormatter = new TextFormatter(indentSpy)
 
     # LISTEN TO ALL OF THE EVENTS!
     @registerEvents()
