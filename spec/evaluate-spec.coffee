@@ -17,12 +17,12 @@
 # Empirical Evaluation
 
 {WorkspaceView} = require 'atom'
-{testEnvironment, keyTyper} = require './evaluate-helper'
+{testEnvironment} = require './evaluate-helper'
 
 # Methodology
 
 fdescribe "The empirical evaluation", ->
-  [editorView, typeKey] = []
+  [editorView] = []
 
   ## Setup
   beforeEach ->
