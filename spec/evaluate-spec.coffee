@@ -48,8 +48,10 @@ fdescribe "The empirical evaluation", ->
   describe 'Atom', ->
     it "tests unassisted typing in Atom", ->
       testEnvironment 'plain-text', (tokens) ->
+        # TODO: refactor into its own file.
         count = 0
         logicalIndent = 0
+        didAutoIndent = false
 
         currentIndentLevel = ->
           lineNum = @editor.getLastBufferRow()
@@ -60,22 +62,37 @@ fdescribe "The empirical evaluation", ->
             when 'INDENT'
               # Auto-indent means no key press.
               logicalIndent += 1
-              0
+              if not didAutoIndent
+                @editor.indentSelectedRows()
+                1
+              else
+                didAutoIndent = false
+                0
+
             when 'DEDENT'
               logicalIndent -= 1
               @editor.backspace()
               1
+
             when 'NEWLINE', 'NL'
               backspaceCounter = 0
+
+              indentLevelBeforeNewline = currentIndentLevel()
+
               # When we've indented BUT the next token isn't an indent...
               @editor.insertNewlineBelow()
               unless tokens[i + 1]?.category is 'INDENT'
                 while currentIndentLevel() > logicalIndent
                   @editor.backspace()
                   backspaceCounter++
+
+              didAutoIndent = currentIndentLevel() > indentLevelBeforeNewline
+
               1 + backspaceCounter
+
             when 'ENDMARKER'
               0
+
             else
               @editor.insertText token.text
               unless token.category is 'COMMENT'
