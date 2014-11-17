@@ -19,7 +19,7 @@ fs = require 'fs'
 PythonShell = require 'python-shell'
 
 # Load the tokens from the sample commited.
-fileTokens = require './sample'
+sampleTokens = require './sample'
 
 module.exports =
 
@@ -33,47 +33,53 @@ module.exports =
   #     * `text`       {String} of the generated output.
   #
   testEnvironment: (name, fn) ->
+    files = []
+    tokenizedFiles = [sampleTokens]
 
     @editor =
-       atom.workspaceView.getActiveView().getEditor()
+      atom.workspaceView.getActiveView().getEditor()
 
     expect(@editor).toBeTruthy()
-    files =
-      [fileTokens].map (canonicalTokens) ->
-        # Empty the text editor...
-        @editor.setText ''
+    tokenizedFiles.forEach (canonicalTokens) ->
+      # Empty the text editor...
+      @editor.setText ''
 
-        # TODO: allow for async/callback for fn.
-        answer = fn.call(@, canonicalTokens)
+      # TODO: allow for async/callback for fn.
+      {keystrokes} = fn.call(@, canonicalTokens)
 
+      # XXX: Uh.... get rid of a newline at the end...
+      @editor.backspace()
+      text = @editor.getText()
 
-        # XXX: Uh.... get rid of a newline...
-        @editor.backspace()
-        text = @editor.getText()
+      console.log text
 
-        console.log text
+      # The verification process is:
+      #
+      # normalized := file | tokenizer
+      # expect that (normalized | typer | tokenizer) === normalized
+      tokens = null
+      runs ->
+        tokenize text, (err, result) ->
+          expect(err).toBeFalsy()
+          tokens = result
 
-        # The verification process is:
-        #
-        # normalized := file | tokenizer
-        # expect that (normalized | typer | tokenizer) === normalized
-        tokens = null
-        runs ->
-          tokenize text, (err, result) ->
-            expect(err).toBeFalsy()
-            tokens = result
+      waitsFor((-> tokens?), 'Expected Python script to terminate.', 500)
 
-        waitsFor((-> tokens?), 'Expected Python script to terminate.', 500)
+      runs ->
+        util = require 'util'
+        diff =  require('deep-diff').diff(canonicalTokens, tokens)
+        console.log(util.inspect(diff, depth: null)) if diff
+        expect(tokens).toEqual(canonicalTokens)
 
-        runs ->
-          util = require 'util'
-          diff =  require('deep-diff').diff(canonicalTokens, tokens)
-          console.log(util.inspect(diff, depth: null))
-          expect(yes).toBe true
-          #expect(tokens).toEqual(canonicalTokens)
+        # TODO: Probably should put the file name, just for funsies.
+        files.push({keystrokes})
 
-    fs.writeFile "results/#{name}.json", JSON.stringify({name, files}), (err) ->
-      console.warn "Could not save results for #{name}!" if err?
+    waitsFor((->files.length == tokenizedFiles.length), '???', 2**24)
+
+    runs ->
+      contents = JSON.stringify({name, files})
+      fs.writeFile "results/#{name}.json", contents, (err) ->
+        console.warn "Could not save results for #{name}!" if err?
 
 tokenize = (text, done) ->
   PythonShell.defaultOptions =
