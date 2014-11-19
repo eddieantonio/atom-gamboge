@@ -18,7 +18,6 @@ module.exports = (tokens) ->
 
   for token, i in tokens
     {text, category} = token
-    console.log "[#{category}] #{text}..."
     delta = switch category
       when 'INDENT'
         # Auto-indent means no key press.
@@ -31,12 +30,11 @@ module.exports = (tokens) ->
       when 'NEWLINE'
         backspaceCounter = 0
 
-        # When we've indented BUT the next sl-relevant token isn't
-        # an indent, then we gotta backspace:
+        # When we've indented BUT the next syntax-relevant token isn't an
+        # indent, then we gotta backspace:
         @editor.insertNewlineBelow()
         unless nextImportantTokenIsIndent(tokens, i)
           while currentIndentLevel() > logicalIndent
-            console.log 'Backspace!'
             @editor.backspace()
             backspaceCounter++
 
@@ -57,7 +55,6 @@ module.exports = (tokens) ->
           @editor.insertText ' '
         text.length
 
-    console.log "...#{delta} keystrokes"
     count += delta
 
   keystrokes: count
