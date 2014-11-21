@@ -38,7 +38,7 @@ specialChars = do ->
     '<NEWLINE>': mkInvisibleGetter 'cr'
     '<NL>': mkInvisibleGetter 'cr'
     '<INDENT>': mkInvisibleGetter 'tab'
-    'DEDENT':
+    '<DEDENT>':
       get: -> atom.config.get('gamboge.dedentMarker')
       enumerable: yes
 

@@ -43,7 +43,7 @@ class TextFormatter
   # Internal: Emits a newline PLUS the next indentation.
   handleNewline: (peek) ->
     indentLevel =
-      @getIndentLevel() + @additionalIndent - (peek is 'DEDENT')
+      @getIndentLevel() + @additionalIndent - (peek is '<DEDENT>')
     "\n#{makeIndents @getIndentChars(), indentLevel}"
 
   specialTokens:
@@ -53,7 +53,7 @@ class TextFormatter
       @additionalIndent++
       # Simply emits the indent string.
       @getIndentChars()
-    'DEDENT': ->
+    '<DEDENT>': ->
       @additionalIndent--
       console.assert @additionalIndent >= 0
       # Nothing to output since handleNewline's already got this.

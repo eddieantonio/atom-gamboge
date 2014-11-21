@@ -22,7 +22,7 @@ TextFormatter = require '../lib/text-formatter'
 lines = -> Array::join.call(arguments, '\n')
 asTokens = (str) -> str.split(' ')
 
-describe 'TextFormatter', ->
+fdescribe 'TextFormatter', ->
   [infoSpy] = []
 
   beforeEach ->
@@ -72,13 +72,13 @@ describe 'TextFormatter', ->
 
       it 'handles dedents', ->
         infoSpy.getIndentLevel.andReturn(1)
-        tokens = asTokens 'return self <NEWLINE> DEDENT pass'
+        tokens = asTokens 'return self <NEWLINE> <DEDENT> pass'
         text = formatter.format(tokens)
         expect(text).toBe lines 'return self ', 'pass '
 
       it 'handles dedents when already deeply indented', ->
         infoSpy.getIndentLevel.andReturn(3)
-        tokens = asTokens 'return self <NEWLINE> DEDENT pass'
+        tokens = asTokens 'return self <NEWLINE> <DEDENT> pass'
         text = formatter.format(tokens)
         expect(text).toBe lines 'return self ', '    pass '
 
