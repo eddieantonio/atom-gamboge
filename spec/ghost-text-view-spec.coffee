@@ -31,35 +31,36 @@ describe "HackyGhostView", ->
       $editor = atom.getActiveTextEditor().getView()
       ghostView = new HackyGhostView($($editor))
 
-
   describe '::constructor()', ->
-    [pList, editor] = []
+    [pList] = []
     beforeEach ->
       pList = new PredictionList
-      editor = $editor.getModel()
-      
-    it 'subscribes to PredictionList cursor events', ->
+
+    it 'subscribes to PredictionList events', ->
       spyOn pList, 'onDidChangePredictions'
-      spyOn editor, 'onDidChangePredictions'
-
-    it 'subscribes to TextEditor events'
-
-  describe 'interaction with PredictionList', ->
-    it 'displays the current prediction when the prediction is changed'
-    it 'adds the `gamboge` class to the editor when a prediction is active'
-    it 'removes the `gamboge` class when no prediction is active'
-    it 'inserts the correct amount of whitespace for tokens'
-    it 'wraps whitespace with span of class `gamboge-whitespace`'
 
   describe '::setAt()', ->
     it 'displays ghost text at the end of the line'
+    # Not implemented
     it 'displays ghost text in the middle of the line'
 
   describe '::removeAll()', ->
     beforeEach ->
       $editor.addClass 'gamboge'
+
     it 'removes all ghost-view spans and any prediction text from the editor'
     it 'removes the `gamboge` class from the editor', ->
       ghostView.removeAll()
       expect($editor.hasClass 'gamboge').toBe false
+
+  describe 'when a prediction is active', ->
+    it 'wraps whitespace with span of class `gamboge-whitespace`'
+    it 'inserts the correct visible whitespace tokens'
+    # Do tests for special characters!
+    it 'adds the `gamboge` class to the editor'
+  describe 'when the PredictionList changes', ->
+    it 'displays the current prediction', ->
+    it 'keeps the `gamboge` class on the editor'
+  describe 'when the prediction is deactived', ->
+    it 'removes the `gamboge` class'
 

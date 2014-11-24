@@ -22,7 +22,7 @@ TextFormatter = require '../lib/text-formatter'
 lines = -> Array::join.call(arguments, '\n')
 asTokens = (str) -> str.split(' ')
 
-fdescribe 'TextFormatter', ->
+describe 'TextFormatter', ->
   [infoSpy] = []
 
   beforeEach ->

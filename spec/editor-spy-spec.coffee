@@ -17,21 +17,20 @@ EditorSpy = require '../lib/editor-spy'
 TextEditorView = require 'atom'
 
 describe "EditorSpy", ->
+  [predictionList, editor] = []
 
   beforeEach ->
     atom.workspaceView = workspaceView = new WorkspaceView
     atom.workspaceView.attachToDom()
 
     runs ->
+      predictionList = new PredictionList
+      editor = (new TextEditorView).getModel()
       atom.workspaceView.simulateDomAttachment()
-
 
   describe '::constructor()', ->
     describe 'event subscription', ->
-      [predictionList, editor] = []
       beforeEach ->
-        predictionList = new PredictionList
-        editor = (new TextEditorView).getModel()
 
       it 'subscribes to PredictionList change prediction events', ->
         spyOn predictionList, 'onChangePrediction'
@@ -45,7 +44,8 @@ describe "EditorSpy", ->
         expect(editor.onDidChange.length or editor.onStopChanging.length).toBe 1
 
   describe 'when gamboge:next-prediction is triggered', ->
-    it 'acknowledges next prediction requests'
+    it 'acknowledges next prediction requests', ->
+
   describe 'when gamboge:previous-prediction is triggered', ->
     it 'acknowledges previous prediction requests'
 
