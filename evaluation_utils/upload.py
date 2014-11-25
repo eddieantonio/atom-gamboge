@@ -10,7 +10,7 @@ import logging
 
 from collections import namedtuple
 
-from json_tokenizer import tokenize_file, IgnoreNonAsciiJSONEncoder
+from json_tokenizer import tokenize_file
 
 Repo = namedtuple('Repo', 'owner name default_branch')
 
@@ -38,11 +38,27 @@ def train_from_file(filename):
         r = requests.post(url, files=dict(f=f))
     assert r.status_code == 202
 
+def python_files_from_repos(exclude={}):
+    """
+    List all python files from ALL repos (except the ones specified).
+
+    >>> get_index() and None
+    >>> exclusions = context.index[:261] + context.index[262:]
+    >>> list(python_files_from_repos(exclude=exclusions))[0]
+    u'corpus/aaronsw/html2text/html2text.py'
+
+    """
+    exclusions = set(exclude)
+    for repo in context.index:
+        if repo in exclusions:
+            continue
+        repo_root = dir_for_repo(repo)
+        for filename in all_python_files(repo_root):
+            yield filename
+
 def train_corpus_excluding(repo):
-    # For every file in the corpus.
-    #   If the file matches the repo name, skip it
-    #   Issue the post request.
-    raise NotImplemented
+    for filename in python_files_from_repos(exclude=repo):
+        train_from_file(filename)
 
 def all_python_files(repo_root):
     """

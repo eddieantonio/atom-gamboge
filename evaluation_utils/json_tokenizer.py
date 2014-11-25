@@ -18,13 +18,6 @@ import token
 import logging
 from contextlib import contextmanager
 
-class IgnoreNonAsciiJSONEncoder(json.JSONEncoder):
-    def default(self, o):
-        # Replace any decoding errors with '�'
-        if isinstance(o, str):
-            return o.decode('utf-8', errors='replace')
-        return JSONEncoder.default(self, o)
-
 def objectize(category, text, start, end, logical_line):
     return OrderedDict([
         ('category', token.tok_name[category]),
