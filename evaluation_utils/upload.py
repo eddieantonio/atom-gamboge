@@ -2,6 +2,7 @@
 
 # Requires requests library
 
+import sys
 import fnmatch
 import json
 import os
