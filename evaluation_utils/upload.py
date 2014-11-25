@@ -1,23 +1,22 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 
 # Requires requests library
 
 import fnmatch
-import hashlib
 import json
 import os
 import requests
-import shutil
-import tempfile
+import logging
 
-from urllib.request import urlopen
 from collections import namedtuple
+
+from json_tokenizer import tokenize_file, IgnoreNonAsciiJSONEncoder
 
 Repo = namedtuple('Repo', 'owner name default_branch')
 
 # Global object... to make things easier, but hackier.
 class context(object):
-    directory = 'corpus'
+    directory = u'corpus'
     index = None
 
 def get_index(dirname=context.directory):
@@ -41,20 +40,9 @@ def train_from_file(filename):
 
 def train_corpus_excluding(repo):
     # For every file in the corpus.
-    #   If the file matches the corpus name, skip it
+    #   If the file matches the repo name, skip it
     #   Issue the post request.
     raise NotImplemented
-
-def md5(filename):
-    """
-    MD5's the given filename.
-    >>> md5('/usr/share/dict/words')
-    '2cf1a35b9c05153d37a1ee7465893be3'
-    """
-    m = hashlib.md5()
-    with open(filename, 'rb') as f:
-        m.update(f.read())
-    return m.hexdigest()
 
 def all_python_files(repo_root):
     """
@@ -63,9 +51,9 @@ def all_python_files(repo_root):
     >>> get_index() and None
     >>> r = context.index[123]
     >>> dir_for_repo(r)
-    'corpus/iambus/xunlei-lixian'
+    u'corpus/iambus/xunlei-lixian'
     >>> list(all_python_files(dir_for_repo(r)))[0]
-    'corpus/iambus/xunlei-lixian/ascii_verification_code.py'
+    u'corpus/iambus/xunlei-lixian/ascii_verification_code.py'
     """
 
     for root, _, names in os.walk(repo_root):
@@ -73,25 +61,42 @@ def all_python_files(repo_root):
             yield os.path.join(root, filename)
 
 def dir_for_repo(repo):
-    return  os.path.join(context.directory, repo.owner, repo.name)
+    return os.path.join(context.directory, repo.owner, repo.name)
 
-def move_files_to_tmpdir(repo):
-    tempdir = tempfile.TemporaryDirectory()
-
+def tokens_for_repo(repo):
     # The root directory of the repository:
     repo_root = dir_for_repo(repo)
 
+    files = []
+
     # Get every Python file in the repo...
-    for source_path in all_python_files(repo_root):
-        # Create the destination filename from the MD5 of the file, to
-        # prevent duplicates.
-        namehash = md5(source_path)
-        destination = os.path.join(tempdir.name, namehash + '.py')
-        # Copy it over.
-        shutil.copy(original_path, destination)
+    for filename in all_python_files(repo_root):
+        entry = dict(filename=filename,
+                     tokens=tokenize_file(filename))
+        files.append(entry)
+    return files
 
-    return tempdir
+def json_tokens_for_repo(repo):
+    r"""
 
+    This repo has all of the UnicodeDecodeErrors...
+
+    >>> repo = Repo('test', 'unicode_error', 'master')
+    >>> json_tokens_for_repo(repo)
+    '[]'
+    >>> repo = Repo('test', 'hello', 'master')
+    >>> '\ud83d\udca9' in json_tokens_for_repo(repo)
+    True
+    """
+    files = tokens_for_repo(repo)
+    try:
+        json_string = json.dumps(files, ensure_ascii=True)
+    except UnicodeDecodeError:
+        logging.error('Could not JSONify tokens for %r' % (Repo,))
+        json_string = '[]'
+
+    assert '\n' not in json_string
+    return json_string
 
 def main():
     repos = get_index('corpus')
@@ -99,12 +104,13 @@ def main():
     for repo in repos:
         delete_corpus()
         train_corpus_excluding(repo)
-        directory = move_files_to_tmpdir(repo)
-        with directory:
-            # Let the other process know where to find the files.
-            print(dirname)
-            # We're blocked until the other process tells us it's done.
-            assert input() == 'fuzzypickles'
+        json_tokens = (json_tokens_for_repo(repo))
+        if json_tokens == '[]':
+            continue
+        # Send the other process the JSONified tokens.
+        # We're blocked until the other process tells us it's done.
+        assert input() == 'fuzzypickles'
+
 
 if __name__ == '__main__':
     sys.exit(main())

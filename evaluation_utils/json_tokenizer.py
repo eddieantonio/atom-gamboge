@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# coding: utf-8
 
 from __future__ import print_function
 
@@ -8,6 +9,7 @@ Tokenizes Python source to JSON.
 
 import json
 import sys
+import re
 
 from collections import OrderedDict
 
@@ -16,11 +18,32 @@ import token
 import logging
 from contextlib import contextmanager
 
+class IgnoreNonAsciiJSONEncoder(json.JSONEncoder):
+    def default(self, o):
+        # Replace any decoding errors with '�'
+        if isinstance(o, str):
+            return o.decode('utf-8', errors='replace')
+        return JSONEncoder.default(self, o)
+
 def objectize(category, text, start, end, logical_line):
     return OrderedDict([
         ('category', token.tok_name[category]),
         ('text', text),
     ])
+
+def determine_encoding(name):
+    """
+    Determines encoding of the given filename.
+    """
+    with open(name, 'rb') as f:
+        lines = f.readlines()
+    # Does this check according to:
+    # https://www.python.org/dev/peps/pep-0263/
+    for line, _line_no in zip(lines, (0, 1)):
+        match = re.match(r'coding[:=]\s*([-\w.]+)', line)
+        if match:
+            return match.groups(0)
+    return 'ascii'
 
 def tokenize_file(name):
     with open(name) as f:
