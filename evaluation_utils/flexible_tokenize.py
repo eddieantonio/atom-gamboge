@@ -1,14 +1,13 @@
 #!/usr/bin/python
 #
+# This file is derived from `tokenize.py` from Python 2.7.
 #
-#    This file is part of UnnaturalCode.
-#
-#    It is based on tokenize.py from Python 2.7, and retains
-#    Python's copyright and license.
-#
-#    Mostly this is just the original version with some raise
-#    statements commented out.
-
+# Copyright (c) 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010,
+# 2011, 2012, 2013, 2014 Python Software Foundation; All Rights Reserved
+# 
+# Changes:
+#   - some raise statements have been commented out.
+# 
 
 """Tokenization help for Python programs.
 
