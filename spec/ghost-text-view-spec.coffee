@@ -16,51 +16,89 @@
 {$} = require 'space-pen'
 HackyGhostView = require '../lib/hacky-ghost-text-view'
 
+# TODO: move this to fixtures.
+predictions = require './fixtures/predictions.coffee'
+
 describe "HackyGhostView", ->
-  [$editor, ghostView] = []
+  [editor, $editor, ghostView, pList] = []
 
   beforeEach ->
     atom.workspaceView = workspaceView = new WorkspaceView
     atom.workspaceView.attachToDom()
+
+    pList = new PredictionList
 
     waitsForPromise ->
       atom.packages.activatePackage('gamboge')
 
     runs ->
       atom.workspaceView.simulateDomAttachment()
-      $editor = atom.getActiveTextEditor().getView()
-      ghostView = new HackyGhostView($($editor))
+      editor = atom.getActiveTextEditor()
+      $editor = editor.getView()
 
   describe '::constructor()', ->
-    [pList] = []
-    beforeEach ->
-      pList = new PredictionList
-
     it 'subscribes to PredictionList events', ->
       spyOn pList, 'onDidChangePredictions'
 
+      new HackyGhostView(pList, $editor)
+
+      expect(plist.onDidChangePredictions.length).toBe 1
+
+
   describe '::setAt()', ->
-    it 'displays ghost text at the end of the line'
-    # Not implemented
+    beforeEach ->
+      ghostView = new HackyGhostView(pList, $editor)
+
+    it 'displays ghost text at the end of the line', ->
+      $editor.getModel().setText('if __name__ ')
+      pList.setPredictions predictions.varied
+
+      ghostView.setAt([0, 0])
+
+    # Not implemented: v0.2.0-prerelease.
     it 'displays ghost text in the middle of the line'
+
+    # TODO: should ghost-view set this, or should editor-spy?
+    it 'sets the .gamboge class on the editor', ->
+      expect($editor).toBeMatchedBy false
+
 
   describe '::removeAll()', ->
     beforeEach ->
-      $editor.addClass 'gamboge'
+      pList.setPredictions predictions.varied
+      ghostView.setAt([0,0])
 
-    it 'removes all ghost-view spans and any prediction text from the editor'
-    it 'removes the `gamboge` class from the editor', ->
+    it 'removes all gamboge-ghost spans and any prediction text from the editor', ->
+      # Set the prediction.
+      expect($editor).toContain '.gamboge-ghost'
+
       ghostView.removeAll()
-      expect($editor.hasClass 'gamboge').toBe false
+      expect($editor).not.toContain '.gamboge-ghost'
+      expect($editor).not.toContain '.gamboge-invisible'
 
-  describe 'when a prediction is active', ->
-    it 'wraps whitespace with span of class `gamboge-whitespace`'
-    it 'inserts the correct visible whitespace tokens'
-    # Do tests for special characters!
-    it 'adds the `gamboge` class to the editor'
-  describe 'when the PredictionList changes', ->
-    it 'displays the current prediction', ->
-    it 'keeps the `gamboge` class on the editor'
-  describe 'when the prediction is deactived', ->
-    it 'removes the `gamboge` class'
+    it 'removes the `gamboge` class from the editor', ->
+      expect($editor).toHaveClass 'gamboge'
+
+      ghostView.removeAll()
+      expect($editor).not.toHaveClass 'gamboge'
+
+  describe 'when PredictionList triggers an event', ->
+    beforeEach ->
+      ghostView = new HackyGhostView(pList, $editor)
+
+    describe 'when a prediction is active', ->
+      it 'wraps whitespace with span of class `gamboge-whitespace`', ->
+        expect($editor)
+
+      it 'inserts the correct visible whitespace tokens', ->
+
+      # Do tests for special characters!
+      it 'adds the `gamboge` class to the editor'
+
+    describe 'when the PredictionList changes', ->
+      it 'displays the current prediction', ->
+      it 'keeps the `gamboge` class on the editor'
+
+    describe 'when the prediction is deactived', ->
+      it 'removes the `gamboge` class'
 
