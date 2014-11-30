@@ -18,7 +18,7 @@ _ = require 'underscore-plus'
 PredictionList = require '../lib/prediction-list'
 predictions = require './fixtures/predictions'
 
-fdescribe 'PredictionList', ->
+describe 'PredictionList', ->
 
   describe '::constructor()', ->
     it 'constructs with zero arguments', ->

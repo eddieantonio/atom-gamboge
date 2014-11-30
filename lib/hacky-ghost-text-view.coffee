@@ -15,18 +15,47 @@
 
 # Not to be confused with GhostScript utility...
 
+{Point} = require 'atom'
+{CompositeDisposable} = require 'event-kit'
 {View} = require 'space-pen'
+
+
+module.exports=
+class HackyGhostView
+  subscriptions = new CompositeDisposable
+  $view = null
+
+  constructor: (predictions, @$editor) ->
+    subscriptions.add predictions.onDidChangeIndex (index) =>
+      # TODO
+    subscriptions.add predictions.onDidInvalidate (index) =>
+      @removeAll()
+    subscriptions.add predictions.onDideChangePredictions (index) =>
+      # TODO
+
+  setAt: (inPosition) ->
+    position = Point.fromObject(inPosition)
+    throw new Error('not implemented')
+    # TODO
+
+  removeAll: ->
+    # TODO
+
+  destroy:
+    subscriptions.dispose()
+
 
 # A SpacePen view for
 class GhostTextView extends View
   @content: (tokens) ->
     @div class: 'gamboge-ghost', =>
       for token in tokens
+        # Add a space, just to make sure we're still sane.
         @text ' '
         if token of specialChars
           @span specialChars[token], class: 'gamboge-invisible'
-        else @text token
-        # Add a space, just to make sure we're still sane.
+        else
+          @text token
 
 # Keys are special tokens that are represented by internal characters.
 specialChars = do ->

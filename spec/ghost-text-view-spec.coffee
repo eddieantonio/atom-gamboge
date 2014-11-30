@@ -19,7 +19,7 @@ HackyGhostView = require '../lib/hacky-ghost-text-view'
 # TODO: move this to fixtures.
 predictions = require './fixtures/predictions.coffee'
 
-describe "HackyGhostView", ->
+fdescribe "HackyGhostView", ->
   [editor, $editor, ghostView, pList] = []
 
   beforeEach ->
@@ -54,6 +54,7 @@ describe "HackyGhostView", ->
       pList.setPredictions predictions.varied
 
       ghostView.setAt([0, 0])
+      # TODO:
 
     # Not implemented: v0.2.0-prerelease.
     it 'displays ghost text in the middle of the line'
