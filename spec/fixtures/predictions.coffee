@@ -32,7 +32,15 @@ module.exports =
   # - Dedent token
   # - Dedent token + normal token
   'after return False': [
-    [1, '<DEDENT>']
-    [70, '<DEDENT>', 'def']
+    [1, ['<DEDENT>']]
+    [70, ['<DEDENT>', 'def']]
+
+  ]
+
+  # When you just want some predictions in the test. Text is always '...'
+  ellipsis: [
+    # I love how this is syntactically valid in Python 3
+    [1, ['...']],
+    [70, ['...', 'or', '...']]
   ]
 
