@@ -49,8 +49,8 @@ class PredictionList
       when not (0 <= @_index < @_predictions.length)
         # Wrap the value around.
         @_index %%= @_predictions.length
-        false
-      else true
+        true
+      else false
 
     status = {index: @_index, direction, wrapped, target: @}
 
