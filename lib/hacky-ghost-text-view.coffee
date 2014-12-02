@@ -17,10 +17,10 @@
 
 {Point} = require 'atom'
 {CompositeDisposable} = require 'event-kit'
-{View} = require 'space-pen'
+{$, View} = require 'space-pen'
 
 
-# XXX: REMOVE ME
+#FIXME
 pe = require('pretty-error').start()
 pe.skipNodeFiles()
 pe.skipPackage('q')
@@ -33,20 +33,43 @@ class HackyGhostView
 
   constructor: (predictions, @$editor) ->
     @subscriptions = new CompositeDisposable
+
     @subscriptions.add predictions.onDidChangeIndex (index) =>
-      # TODO
+      return if not predictions.current()?
+
+      {tokens, position} = predictions.current()
+      console.assert tokens.length >= 1
+      console.assert position.length is 2
+      @setAt tokens, position
+
     @subscriptions.add predictions.onDidInvalidate (index) =>
       @removeAll()
     @subscriptions.add predictions.onDidChangePredictions (index) =>
       # TODO
 
-  setAt: (inPosition) ->
-    position = Point.fromObject(inPosition)
-    throw new Error('not implemented')
-    # TODO
+  setAt: (tokens, position) ->
+    [row, column] = position
+
+    # XXX: This is a *disgusting* and fragile way to add the ghost-text; I
+    # easily expect this to be broken in in the near future. I really
+    # shouldn't be messing around with the editor DOM, but it's effective as
+    # long as we're responsible with it...
+    $row = $(".line[data-screen-row=#{row}]")
+    console.assert not $row.empty()
+
+    $sourceSpan = $row.children('.source, .text').first()
+    @$ghostText = new GhostTextView(tokens)
+
+    # TODO: place the element at the given column!
+    $sourceSpan.append @$ghostText
+
+    # This class will be useful in selectors.
+    @$editor.addClass 'gamboge'
+
 
   removeAll: ->
-    # TODO
+    @$editor.find('.gamboge-ghost, .gamboge-invisible').remove()
+    @$editor.removeClass 'gamboge'
 
   destroy: ->
     @subscriptions.dispose()

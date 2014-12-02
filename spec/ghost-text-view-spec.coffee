@@ -48,30 +48,49 @@ fdescribe "HackyGhostView", ->
 
 
   describe '::setAt()', ->
+    [prediction] = []
     beforeEach ->
       ghostView = new HackyGhostView(pList, $editor)
+      [prediction] = PredictionList.createUnderlyingArray(
+        predictions['after for i in range(10):']
+      )
 
-    it 'displays ghost text at the end of the line', ->
-      $editor.getModel().setText('if __name__ ')
-      pList.setPredictions predictions['after for i in range(10):']
+    xit 'displays ghost text at the end of the line', ->
+      editor.setText('for i in range(10):')
 
-      ghostView.setAt([0, 0])
-      # TODO:
+      ghostView.setAt(prediction.tokens, [1, 19])
+
+      selector = '.gamboge-ghost, .gamboge-invisible'
+      expect($editor).toContain(selector)
+      expect($editor.find(selector)).not.toBeEmpty()
 
     # Not implemented: v0.2.0-prerelease.
-    it 'displays ghost text in the middle of the line'
+    xit 'displays ghost text in the middle of the line', ->
+      editor.setText('for i in range(10):')
+
+      # After for i/...
+      ghostView.setAt(prediction.tokens, [1, 5])
+
+      selector = '.gamboge-ghost, .gamboge-invisible'
+      expect($editor).toContain(selector)
+      expect($editor.find(selector)).not.toBeEmpty()
 
     # TODO: should ghost-view set this, or should editor-spy?
     it 'sets the .gamboge class on the editor', ->
+      expect($editor).not.toMatchSelector '.gamboge'
+
+      ghostView.setAt(prediction.tokens, [1, 19])
       expect($editor).toMatchSelector '.gamboge'
 
 
   describe '::removeAll()', ->
     beforeEach ->
       pList.setPredictions predictions.ellipsis
-      ghostView.setAt([0,0])
+      ghostView = new HackyGhostView(pList, $editor)
+      ghostView.setAt(pList.current().tokens, [0,0])
 
-    it 'removes all gamboge-ghost spans and any prediction text from the editor', ->
+    #FIXME
+    xit 'removes all gamboge-ghost spans and any prediction text from the editor', ->
       # Set the prediction.
       expect($editor).toContain '.gamboge-ghost'
 
@@ -90,7 +109,7 @@ fdescribe "HackyGhostView", ->
       ghostView = new HackyGhostView(pList, $editor)
 
     describe 'when a prediction is active', ->
-      it 'wraps whitespace with span of class `gamboge-whitespace`', ->
+      it 'wraps whitespace with span of class `gamboge-invisible`', ->
         expect($editor)
 
       it 'inserts the correct visible whitespace tokens', ->

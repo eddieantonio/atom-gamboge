@@ -125,19 +125,6 @@ class GambogeView extends View
       invalidate: 'touch'
       persistent: no
 
-    # XXX: This is a *disgusting* and fragile way to add the ghost-text; I
-    # easily expect this to be broken in future versions in the near future. I
-    # really shouldn't be messing around with the editor DOM, but it's
-    # effective as long as we're responsible with it...
-    $row = $(".line[data-screen-row=#{row}]")
-    $sourceSpan = $row.children('.source, .text').first()
-    @$ghostText = new GhostTextView(tokens)
-    # TODO: place the element where the *cursor* is!
-    $sourceSpan.append @$ghostText
-
-    # This class will be useful in selectors.
-    @editorView.addClass 'gamboge'
-
     @predictionMarker.onDidChange (marker) =>
       unless marker.isValid
         @destroyMarker()
