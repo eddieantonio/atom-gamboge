@@ -13,7 +13,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Note: this code heavily based on atom/autocomplete, (C) GitHub Inc. 2014 
+# Note: this code heavily based on atom/autocomplete, (C) GitHub Inc. 2014
 # https://github.com/atom/autocomplete/blob/master/lib/autocomplete.coffee
 module.exports =
 
@@ -22,15 +22,18 @@ module.exports =
   editorSubcription: null
 
   activate: ->
-    GambogeView = require './gamboge-view'
+    PredictionList = require './prediction-list'
+    # TODO: All the other packages...
 
     # Activate on each editor.
+    ###
     @editorSubcription = atom.workspaceView.eachEditorView (editorView) =>
       return if editorView.mini or not editorView.attached
-      gambogeView = new GambogeView(editorView)
+      # Instantiate all the MVC doohickeys.
       editorView.getModel().onDidDestroy =>
         # Clean up the event dispatcher.
-        gambogeView.remove()
+        console.log 'Deactivating Gamboge'
+    ###
 
   # TODO: According to the
   # [docs](https://atom.io/docs/latest/creating-a-package#source-code)

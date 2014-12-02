@@ -28,9 +28,6 @@ TextFormatter = require './text-formatter'
 # predictions, and forwarding display of predictions (through [INSERT CLASS
 # HERE]).
 
-# Use at most this many tokens to form predictions.
-NGRAM_ORDER = 4
-
 # TODO: Refactor Gamboge event listener from this.
 # TODO: GambogeView IS NOT a View!
 

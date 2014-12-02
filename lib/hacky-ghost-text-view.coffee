@@ -20,17 +20,24 @@
 {View} = require 'space-pen'
 
 
-module.exports=
+# XXX: REMOVE ME
+pe = require('pretty-error').start()
+pe.skipNodeFiles()
+pe.skipPackage('q')
+pe.skipPath('/Applications/Atom.app/Contents/Resources/app/vendor/jasmine.js')
+
+module.exports =
 class HackyGhostView
-  subscriptions = new CompositeDisposable
-  $view = null
+  subscriptions: null
+  $view: null
 
   constructor: (predictions, @$editor) ->
-    subscriptions.add predictions.onDidChangeIndex (index) =>
+    @subscriptions = new CompositeDisposable
+    @subscriptions.add predictions.onDidChangeIndex (index) =>
       # TODO
-    subscriptions.add predictions.onDidInvalidate (index) =>
+    @subscriptions.add predictions.onDidInvalidate (index) =>
       @removeAll()
-    subscriptions.add predictions.onDideChangePredictions (index) =>
+    @subscriptions.add predictions.onDidChangePredictions (index) =>
       # TODO
 
   setAt: (inPosition) ->
@@ -41,8 +48,8 @@ class HackyGhostView
   removeAll: ->
     # TODO
 
-  destroy:
-    subscriptions.dispose()
+  destroy: ->
+    @subscriptions.dispose()
 
 
 # A SpacePen view for
@@ -68,5 +75,3 @@ specialChars = do ->
     '<NL>': mkInvisibleGetter 'cr'
     '<INDENT>': mkInvisibleGetter 'tab'
     '<DEDENT>': mkInvisibleGetter 'dedentMarker', 'gamboge'
-
-module.exports = {GhostTextView, specialChars}

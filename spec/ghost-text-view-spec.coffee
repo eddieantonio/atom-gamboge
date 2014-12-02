@@ -13,36 +13,38 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-{$} = require 'space-pen'
-HackyGhostView = require '../lib/hacky-ghost-text-view'
 
-# TODO: move this to fixtures.
+{WorkspaceView} = require 'atom'
+{$} = require 'space-pen'
+
+HackyGhostView = require '../lib/hacky-ghost-text-view'
+PredictionList = require '../lib/prediction-list'
 predictions = require './fixtures/predictions.coffee'
 
+# FIXME:
 fdescribe "HackyGhostView", ->
   [editor, $editor, ghostView, pList] = []
 
   beforeEach ->
-    atom.workspaceView = workspaceView = new WorkspaceView
-    atom.workspaceView.attachToDom()
+    atom.workspaceView = new WorkspaceView
 
     pList = new PredictionList
 
     waitsForPromise ->
-      atom.packages.activatePackage('gamboge')
+      atom.workspace.open('sample.py')
 
     runs ->
       atom.workspaceView.simulateDomAttachment()
-      editor = atom.getActiveTextEditor()
-      $editor = editor.getView()
+      $editor = atom.workspaceView.getActiveView()
+      editor = $editor.getModel()
 
   describe '::constructor()', ->
     it 'subscribes to PredictionList events', ->
-      spyOn pList, 'onDidChangePredictions'
+      spyOn(pList, 'onDidChangePredictions')
 
       new HackyGhostView(pList, $editor)
 
-      expect(plist.onDidChangePredictions.length).toBe 1
+      expect(pList.onDidChangePredictions).toHaveBeenCalled()
 
 
   describe '::setAt()', ->
@@ -51,7 +53,7 @@ fdescribe "HackyGhostView", ->
 
     it 'displays ghost text at the end of the line', ->
       $editor.getModel().setText('if __name__ ')
-      pList.setPredictions predictions.varied
+      pList.setPredictions predictions['after for i in range(10):']
 
       ghostView.setAt([0, 0])
       # TODO:
@@ -61,12 +63,12 @@ fdescribe "HackyGhostView", ->
 
     # TODO: should ghost-view set this, or should editor-spy?
     it 'sets the .gamboge class on the editor', ->
-      expect($editor).toBeMatchedBy false
+      expect($editor).toMatchSelector '.gamboge'
 
 
   describe '::removeAll()', ->
     beforeEach ->
-      pList.setPredictions predictions.varied
+      pList.setPredictions predictions.ellipsis
       ghostView.setAt([0,0])
 
     it 'removes all gamboge-ghost spans and any prediction text from the editor', ->
