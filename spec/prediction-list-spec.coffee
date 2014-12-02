@@ -132,6 +132,15 @@ describe 'PredictionList', ->
 
         expect(predictionList.current()).toBeUndefined()
 
+      it 'returns the current prediction with tokens, entropy, and buffer position', ->
+        arbitraryPoint = [42, 6]
+        predictionList.setPredictions(predictions.ellipsis, arbitraryPoint)
+
+        {tokens, entropy, position} = predictionList.current()
+        expect(tokens).toEqual ['...']
+        expect(entropy).toBeGreaterThan 0
+        expect(position).toEqual [42, 6]
+
 
   describe '.createUnderlyingArray()', ->
     it 'sorts the list, biassing towards longer, but slightly less probable
