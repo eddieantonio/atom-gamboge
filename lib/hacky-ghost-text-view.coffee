@@ -19,22 +19,16 @@
 {CompositeDisposable} = require 'event-kit'
 {$, View} = require 'space-pen'
 
-#FIXME: Temporary thing for pretty output on MY screen.
-if process.env.TERM_PROGRAM is 'iTerm.app' and process.env.USER is 'eddieantonio'
-  pe = require('pretty-error').start()
-  pe.skipNodeFiles()
-  pe.skipPackage('q')
-  pe.skipPath('/Applications/Atom.app/Contents/Resources/app/vendor/jasmine.js')
-
 module.exports =
 class HackyGhostView
   subscriptions: null
-  $view: null
+  $ghostText: null
 
   constructor: (predictions, @$editor) ->
     @subscriptions = new CompositeDisposable
 
     @subscriptions.add predictions.onDidChangeIndex (index) =>
+      @removeAll()
       return if not predictions.current()?
 
       {tokens, position} = predictions.current()
@@ -68,11 +62,13 @@ class HackyGhostView
     @$editor.addClass 'gamboge'
 
   removeAll: ->
+    return unless @$ghostText?
     @$editor.find('.gamboge-ghost, .gamboge-invisible').remove()
     @$editor.removeClass 'gamboge'
     @$ghostText = null
 
   destroy: ->
+    @removeAll()
     @subscriptions.dispose()
 
 
@@ -87,6 +83,7 @@ class GhostTextView extends View
           @span specialChars[token], class: 'gamboge-invisible'
         else
           @text token
+
 
 # Keys are special tokens that are represented by internal characters.
 specialChars = do ->

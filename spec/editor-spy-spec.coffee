@@ -14,34 +14,45 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 EditorSpy = require '../lib/editor-spy'
-TextEditorView = require 'atom'
+HackyGhostView = require '../lib/hacky-ghost-text-view'
+PredictionList = require '../lib/prediction-list'
+{TextEditor, WorkspaceView} = require 'atom'
 
 describe "EditorSpy", ->
-  [predictionList, editor] = []
+  [predictionList, editor, editorView] = []
 
   beforeEach ->
-    atom.workspaceView = workspaceView = new WorkspaceView
-    atom.workspaceView.attachToDom()
+    runs ->
+      # e'ry test does it this way...
+      atom.workspaceView = new WorkspaceView()
+      atom.workspace = atom.workspaceView.model
+
+    waitsForPromise ->
+      atom.workspace.open('sample.js').then (e) ->
+        editor = e
+        atom.workspaceView.attachToDom()
 
     runs ->
       predictionList = new PredictionList
-      editor = (new TextEditorView).getModel()
       atom.workspaceView.simulateDomAttachment()
+      editorView = atom.workspaceView.getActiveView()
 
-  describe '::constructor()', ->
+
+  fdescribe '::constructor()', ->
     describe 'event subscription', ->
       beforeEach ->
 
       it 'subscribes to PredictionList change prediction events', ->
-        spyOn predictionList, 'onChangePrediction'
+        spyOn predictionList, 'onDidChangePredictions'
         new EditorSpy(predictionList, editor)
-        expect(predictionList.onChangePrediction).toHaveBeenCalled()
+        expect(predictionList.onDidChangePredictions).toHaveBeenCalled()
 
       it 'subscribes to TextEditor events', ->
-        spyOn editor, 'onDidChange'
-        spyOn editor, 'onStopChanging'
+        spyOn(editor, 'onDidChange')
+        spyOn(editor, 'onDidStopChanging')
 
-        expect(editor.onDidChange.length or editor.onStopChanging.length).toBe 1
+        expect(editor.onDidStopChanging.calls.length or
+          editor.onDidChange.calls.length).toBeGreaterThan 0
 
   describe 'when gamboge:next-prediction is triggered', ->
     it 'acknowledges next prediction requests', ->

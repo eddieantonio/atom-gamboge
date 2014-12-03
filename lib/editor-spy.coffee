@@ -13,11 +13,16 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-{Point, Range, View} = require 'atom'
-{$} = require 'space-pen'
+{Point, Range, View, CompositeDisposable} = require 'atom'
+
+#FIXME: Temporary thing for pretty output on MY screen.
+if process.env.TERM_PROGRAM is 'iTerm.app' and process.env.USER is 'eddieantonio'
+  pe = require('pretty-error').start()
+  pe.skipNodeFiles()
+  pe.skipPackage('q')
+  pe.skipPath('/Applications/Atom.app/Contents/Resources/app/vendor/jasmine.js')
 
 
-{GhostTextView} = require './hacky-ghost-text-view'
 PredictionList = require './prediction-list'
 TextFormatter = require './text-formatter'
 
@@ -28,17 +33,11 @@ TextFormatter = require './text-formatter'
 # predictions, and forwarding display of predictions (through [INSERT CLASS
 # HERE]).
 
-# TODO: Refactor Gamboge event listener from this.
-# TODO: GambogeView IS NOT a View!
-
-# Note: Heavily based on: atom/autocomplete, (C) GitHub Inc. 2014
-# https://github.com/atom/autocomplete/blob/master/lib/autocomplete-view.coffee
 module.exports =
-class GambogeView extends View
-  $ghostText: null
-
+class EditorSpy
   lastChangeWasPredictionInsert: false
   predictionMarker: null
+  subscriptions: new CompositeDisposable
 
   # The model.
   predictionList: new PredictionList
@@ -47,8 +46,7 @@ class GambogeView extends View
     # TODO: look-up these classes! overlay from-top
     @div class: 'gamboge hidden'
 
-  initialize: (@editorView) ->
-    @editor = @editorView.getModel()
+  constructor: (@predictionList, @editor) ->
     @buffer = @editor.getBuffer()
 
     # The insert formater needs to know how to get the current indenting
@@ -66,23 +64,12 @@ class GambogeView extends View
       return @resetChangeIgnorance() if @lastChangeWasPredictionInsert
       @askForPredictions()
 
-    @subscribeToCommand @editorView, 'gamboge:show-suggestions', =>
-      @askForPredictions()
-
-    @subscribeToCommand @editorView, 'gamboge:complete', =>
-      @completeTokens n: 1
-    @subscribeToCommand @editorView, 'gamboge:complete-all', =>
-      @completeTokens all: yes
-
-    @subscribeToCommand @editorView, 'gamboge:next-prediction', =>
-      @predictionList.next()
-    @subscribeToCommand @editorView, 'gamboge:previous-prediction', =>
-      @predictionList.prev()
-
-    @predictionList.onDidChangeIndex (event) =>
-      @unshowGhostText()
-      {target} = event
-      @showGhostText target.current()
+    @subscriptions.add atom.commands.add '.gamboge',
+      'gamboge:show-suggestions': => @askForPredictions()
+      'gamboge:complete': => @completeTokens n: 1
+      'gamboge:complete-all': => @completeTokens all: yes
+      'gamboge:next-prediction': => @predictionList.next()
+      'gamboge:previous-prediction': => @predictionList.prev()
 
   completeTokens: ({n, all}) ->
     {entropy, tokens} = @predictionList.current()
@@ -103,9 +90,6 @@ class GambogeView extends View
     @predict text, (predictions) =>
       return unless predictions?
       @predictionList.setPredictions predictions
-
-
-
 
   # Using markers, shows the GhostText.
   showGhostText: (prediction) ->
@@ -128,19 +112,12 @@ class GambogeView extends View
     @predictionMarker.onDidChange (marker) =>
       unless marker.isValid
         @destroyMarker()
-        @editorView.removeClass 'gamboge'
+        @predictionList.invalidate()
 
   # Get rid of the prediction marker and any annotation associated with it.
   destroyMarker: ->
     @predictionMarker?.destroy()
     @predictionMarker = null
-    @unshowGhostText()
-
-  unshowGhostText: ->
-    return unless @$ghostText?
-    @editorView.find('.gamboge-ghost').remove()
-    @$ghostText = null
-    @editorView.removeClass('.gamboge')
 
   # Next change event was our fault...
   ignoreNextChange: ->
@@ -181,7 +158,6 @@ class GambogeView extends View
 
   # Tear down any state and detach.
   destroy: ->
-    @editorView.removeClass 'gamboge'
     @detach()
 
 # TODO: Make a popover suggestion list ACTUALLY based on autocomplete!

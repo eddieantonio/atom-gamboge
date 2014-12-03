@@ -26,7 +26,7 @@ PredictionList = require '../lib/prediction-list'
 predictions = require './fixtures/predictions.coffee'
 
 # FIXME:
-fdescribe "HackyGhostView", ->
+describe "HackyGhostView", ->
   [editor, $editor, ghostView, pList] = []
 
   beforeEach ->
