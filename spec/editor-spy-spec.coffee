@@ -23,7 +23,7 @@ describe "EditorSpy", ->
 
   beforeEach ->
     runs ->
-      # e'ry test does it this way...
+      # Bunch of boilerplate test code...
       atom.workspaceView = new WorkspaceView()
       atom.workspace = atom.workspaceView.model
 
@@ -37,19 +37,13 @@ describe "EditorSpy", ->
       atom.workspaceView.simulateDomAttachment()
       editorView = atom.workspaceView.getActiveView()
 
-
   fdescribe '::constructor()', ->
     describe 'event subscription', ->
-      beforeEach ->
-
-      it 'subscribes to PredictionList change prediction events', ->
-        spyOn predictionList, 'onDidChangePredictions'
-        new EditorSpy(predictionList, editor)
-        expect(predictionList.onDidChangePredictions).toHaveBeenCalled()
-
       it 'subscribes to TextEditor events', ->
         spyOn(editor, 'onDidChange')
         spyOn(editor, 'onDidStopChanging')
+
+        new EditorSpy(predictionList, editor)
 
         expect(editor.onDidStopChanging.calls.length or
           editor.onDidChange.calls.length).toBeGreaterThan 0

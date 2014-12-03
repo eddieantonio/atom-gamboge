@@ -39,12 +39,9 @@ class EditorSpy
   predictionMarker: null
   subscriptions: new CompositeDisposable
 
-  # The model.
-  predictionList: new PredictionList
-
-  @content: ->
-    # TODO: look-up these classes! overlay from-top
-    @div class: 'gamboge hidden'
+  # A reference to the model.
+  predictionList: null
+  # We don't need any references to any views.
 
   constructor: (@predictionList, @editor) ->
     @buffer = @editor.getBuffer()
@@ -63,6 +60,8 @@ class EditorSpy
     @editor.onDidStopChanging =>
       return @resetChangeIgnorance() if @lastChangeWasPredictionInsert
       @askForPredictions()
+
+    @predictionList.onDidChangePredictions
 
     @subscriptions.add atom.commands.add '.gamboge',
       'gamboge:show-suggestions': => @askForPredictions()
@@ -158,6 +157,7 @@ class EditorSpy
 
   # Tear down any state and detach.
   destroy: ->
+    @subscriptions.dispose()
     @detach()
 
 # TODO: Make a popover suggestion list ACTUALLY based on autocomplete!
