@@ -13,13 +13,17 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+{TextEditor, WorkspaceView} = require 'atom'
+{$} = require 'space-pen'
+
 EditorSpy = require '../lib/editor-spy'
 HackyGhostView = require '../lib/hacky-ghost-text-view'
 PredictionList = require '../lib/prediction-list'
-{TextEditor, WorkspaceView} = require 'atom'
 
-describe "EditorSpy", ->
-  [predictionList, editor, editorView] = []
+predictions = require './fixtures/predictions'
+
+fdescribe "EditorSpy", ->
+  [predictionList, editor, editorSpy, $editor] = []
 
   beforeEach ->
     runs ->
@@ -31,13 +35,16 @@ describe "EditorSpy", ->
       atom.workspace.open('sample.js').then (e) ->
         editor = e
         atom.workspaceView.attachToDom()
+        $editor = $(atom.views.getView(editor))
 
     runs ->
       predictionList = new PredictionList
-      atom.workspaceView.simulateDomAttachment()
-      editorView = atom.workspaceView.getActiveView()
+      expect($('body')).toContain '.editor'
 
-  fdescribe '::constructor()', ->
+  trigger = (event) ->
+    atom.commands.dispatch($editor.get(0), event)
+
+  describe '::constructor()', ->
     describe 'event subscription', ->
       it 'subscribes to TextEditor events', ->
         spyOn(editor, 'onDidChange')
@@ -48,19 +55,38 @@ describe "EditorSpy", ->
         expect(editor.onDidStopChanging.calls.length or
           editor.onDidChange.calls.length).toBeGreaterThan 0
 
-  describe 'when gamboge:next-prediction is triggered', ->
-    it 'acknowledges next prediction requests', ->
+  describe 'Editor events', ->
+    beforeEach ->
+      editorSpy = new EditorSpy(predictionList, editor)
+      predictionList.setPredictions predictions['start of file']
 
-  describe 'when gamboge:previous-prediction is triggered', ->
-    it 'acknowledges previous prediction requests'
+    describe 'when gamboge:next-prediction is triggered', ->
+      it 'does nothing [without .gamboge]', ->
+        expect($editor).not.toHaveClass 'gamboge'
+        spyOn(predictionList, 'next')
+        trigger('gamboge:next-prediction')
+        expect(predictionList.next).not.toHaveBeenCalled()
 
-  describe 'when gamboge:complete is triggered', ->
-    it 'inserts the first of the current prediction'
+      it 'acknowledges next prediction requests [with .gamboge]', ->
+        $editor.addClass('gamboge')
+        spyOn(predictionList, 'next')
+        trigger('gamboge:next-prediction')
+        expect(predictionList.next).toHaveBeenCalled()
 
-  describe 'when gamboge:complete-all is triggered', ->
-    it 'inserts every token of the current prediction when asked'
+    describe 'when gamboge:previous-prediction is triggered', ->
+      it 'acknowledges previous prediction requests [with gamboge]', ->
+        $editor.addClass('gamboge')
+        spyOn(predictionList, 'prev')
+        trigger('gamboge:previous-prediction')
+        expect(predictionList.prev).toHaveBeenCalled()
 
-  describe 'interaction with PredictionList', ->
+    describe 'when gamboge:complete is triggered', ->
+      it 'inserts the first of the current prediction'
+
+    describe 'when gamboge:complete-all is triggered', ->
+      it 'inserts every token of the current prediction when asked'
+
+  xdescribe 'interaction with PredictionList', ->
     it 'listens to changes in text predictions'
     it 'inserts text when prompted'
     it 'invalidates the current preidction when the buffer is changed'

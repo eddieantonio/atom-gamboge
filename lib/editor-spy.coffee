@@ -61,14 +61,14 @@ class EditorSpy
       return @resetChangeIgnorance() if @lastChangeWasPredictionInsert
       @askForPredictions()
 
-    @predictionList.onDidChangePredictions
-
     @subscriptions.add atom.commands.add '.gamboge',
       'gamboge:show-suggestions': => @askForPredictions()
       'gamboge:complete': => @completeTokens n: 1
       'gamboge:complete-all': => @completeTokens all: yes
       'gamboge:next-prediction': => @predictionList.next()
       'gamboge:previous-prediction': => @predictionList.prev()
+    @subscriptions.add atom.commands.add '.editor',
+      'gamboge:whatever': => console.log('Alex is a dumb butt')
 
   completeTokens: ({n, all}) ->
     {entropy, tokens} = @predictionList.current()
