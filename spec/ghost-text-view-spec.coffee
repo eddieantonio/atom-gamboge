@@ -14,6 +14,10 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
+# SO.... there are a lot of problems with these specs. Like how they mostly
+# don't exist. And how Atom doesn't currently update the EditorView on editor
+# events.
+
 {WorkspaceView} = require 'atom'
 {$} = require 'space-pen'
 
@@ -104,21 +108,24 @@ fdescribe "HackyGhostView", ->
       ghostView.removeAll()
       expect($editor).not.toHaveClass 'gamboge'
 
-  describe 'when PredictionList triggers an event', ->
+  # These ALL need to be written.
+  xdescribe 'when PredictionList triggers an event', ->
     beforeEach ->
       ghostView = new HackyGhostView(pList, $editor)
 
     describe 'when a prediction is active', ->
+      # TODO: set a prediction with tokens and whitespace.
+
       it 'wraps whitespace with span of class `gamboge-invisible`', ->
-        expect($editor)
+        expect($editor).toContain('.gamboge-invisible')
 
-      it 'inserts the correct visible whitespace tokens', ->
+      it 'inserts the correct visible whitespace tokens'
+      # TODO: check config values.
 
-      # Do tests for special characters!
       it 'adds the `gamboge` class to the editor'
 
     describe 'when the PredictionList changes', ->
-      it 'displays the current prediction', ->
+      it 'displays the current prediction'
       it 'keeps the `gamboge` class on the editor'
 
     describe 'when the prediction is deactived', ->

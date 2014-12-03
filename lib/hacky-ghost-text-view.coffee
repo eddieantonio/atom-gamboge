@@ -19,12 +19,12 @@
 {CompositeDisposable} = require 'event-kit'
 {$, View} = require 'space-pen'
 
-
-#FIXME
-pe = require('pretty-error').start()
-pe.skipNodeFiles()
-pe.skipPackage('q')
-pe.skipPath('/Applications/Atom.app/Contents/Resources/app/vendor/jasmine.js')
+#FIXME: Temporary thing for pretty output on MY screen.
+if process.env.TERM_PROGRAM is 'iTerm.app' and process.env.USER is 'eddieantonio'
+  pe = require('pretty-error').start()
+  pe.skipNodeFiles()
+  pe.skipPackage('q')
+  pe.skipPath('/Applications/Atom.app/Contents/Resources/app/vendor/jasmine.js')
 
 module.exports =
 class HackyGhostView
@@ -44,8 +44,9 @@ class HackyGhostView
 
     @subscriptions.add predictions.onDidInvalidate (index) =>
       @removeAll()
+
     @subscriptions.add predictions.onDidChangePredictions (index) =>
-      # TODO
+      # TODO: Should anything even go in here?
 
   setAt: (tokens, position) ->
     [row, column] = position
@@ -66,16 +67,16 @@ class HackyGhostView
     # This class will be useful in selectors.
     @$editor.addClass 'gamboge'
 
-
   removeAll: ->
     @$editor.find('.gamboge-ghost, .gamboge-invisible').remove()
     @$editor.removeClass 'gamboge'
+    @$ghostText = null
 
   destroy: ->
     @subscriptions.dispose()
 
 
-# A SpacePen view for
+# A SpacePen view for a single continuous stretch of ghost-text.
 class GhostTextView extends View
   @content: (tokens) ->
     @div class: 'gamboge-ghost', =>
