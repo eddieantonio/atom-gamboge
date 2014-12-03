@@ -39,7 +39,6 @@ fdescribe "EditorSpy", ->
 
     runs ->
       predictionList = new PredictionList
-      expect($('body')).toContain '.editor'
 
   trigger = (event) ->
     atom.commands.dispatch($editor.get(0), event)
@@ -80,11 +79,31 @@ fdescribe "EditorSpy", ->
         trigger('gamboge:previous-prediction')
         expect(predictionList.prev).toHaveBeenCalled()
 
+      it 'does nothing [without gamboge]', ->
+        expect($editor).not.toHaveClass 'gamboge'
+        spyOn(predictionList, 'prev')
+        trigger('gamboge:previous-prediction')
+        expect(predictionList.prev).not.toHaveBeenCalled()
+
     describe 'when gamboge:complete is triggered', ->
-      it 'inserts the first of the current prediction'
+      it 'inserts the first token of the current prediction', ->
+        $editor.addClass('gamboge')
+        expect(editor.getText()).toBe ''
+
+        trigger('gamboge:complete')
+        expect(editor.getText()).toBe 'import '
+
+      # TODO: test :not(.gamboge)
 
     describe 'when gamboge:complete-all is triggered', ->
-      it 'inserts every token of the current prediction when asked'
+      it 'inserts every token of the current prediction when asked', ->
+        $editor.addClass('gamboge')
+        expect(editor.getText()).toBe ''
+
+        trigger('gamboge:complete-all')
+        expect(editor.getText()).toBe 'import os \n'
+
+      # TODO: test :not(.gamboge)
 
   xdescribe 'interaction with PredictionList', ->
     it 'listens to changes in text predictions'
