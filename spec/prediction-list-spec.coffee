@@ -13,8 +13,10 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-PredictionList = require '../lib/prediction-list'
 _ = require 'underscore-plus'
+
+PredictionList = require '../lib/prediction-list'
+predictions = require './fixtures/predictions'
 
 describe 'PredictionList', ->
 
@@ -22,31 +24,123 @@ describe 'PredictionList', ->
     it 'constructs with zero arguments', ->
       expect(-> new PredictionList()).not.toThrow()
 
-  describe 'after instantation', ->
+  describe 'after instantiation', ->
     [predictionList] = []
 
     beforeEach ->
       predictionList = new PredictionList
 
     describe '::setPredictions()', ->
-      it 'emits a "changed predictions" event'
-      it 'emits a "change index" event'
+      it 'emits a "changed predictions" event', ->
+        didChangePrediction = no
+        predictionList.onDidChangePredictions ->
+          didChangePrediction = yes
+        runs ->
+          predictionList.setPredictions predictions.ellipsis
+        waitsFor (-> didChangePrediction), 1
+        runs ->
+          expect(predictionList.current().tokens).toEqual ['...']
+
+      it 'emits a "change index" event', ->
+        issuedEvent = no
+        predictionList.onDidChangeIndex ({index, direction}) ->
+          expect(index).toBe 0
+          expect(direction).toBe 'beginning'
+          issuedEvent = yes
+        runs ->
+          predictionList.setPredictions(predictions.ellipsis)
+        waitsFor (-> issuedEvent), 1
 
     describe '::next()', ->
       it 'emits a "change index" event', ->
+        issuedEvent = no
+        predictionList.setPredictions(predictions.ellipsis)
+        predictionList.onDidChangeIndex ({index, direction, wrapped}) ->
+          expect(index).toBe 1
+          expect(direction).toBe 'next'
+          expect(wrapped).toBeFalsy()
+          issuedEvent = yes
+        runs ->
+          predictionList.next()
+        waitsFor (-> issuedEvent), 1
+
       it 'wraps around when going around the of the list', ->
+        issuedEvent = no
+        predictionList.setPredictions(predictions.ellipsis)
+
+        expect(predictionList.length()).toBe 2
+        # Get to the last element.
+        predictionList.next()
+
+        predictionList.onDidChangeIndex ({index, direction, wrapped}) ->
+          expect(index).toBe 0
+          expect(direction).toBe 'next'
+          expect(wrapped).toBeTruthy()
+          issuedEvent = yes
+        runs ->
+          predictionList.next()
+        waitsFor (-> issuedEvent), 1
+
 
     describe '::previous()', ->
-      it 'emits a "change index" event'
+      it 'emits a "change index" event', ->
+        issuedEvent = no
+        predictionList.setPredictions(predictions.ellipsis)
+
+        # Get to the last element.
+        predictionList.next()
+        predictionList.onDidChangeIndex ({index, direction, wrapped}) ->
+          expect(index).toBe 0
+          expect(direction).toBe 'prev'
+          expect(wrapped).toBeFalsy()
+          issuedEvent = yes
+        runs ->
+          predictionList.prev()
+        waitsFor (-> issuedEvent), 1
+
+      it 'wraps around when going around the of the list', ->
+        issuedEvent = no
+        predictionList.setPredictions(predictions.ellipsis)
+
+        expect(predictionList.length()).toBe 2
+
+        predictionList.onDidChangeIndex ({index, direction, wrapped}) ->
+          expect(index).toBe 1
+          expect(direction).toBe 'prev'
+          expect(wrapped).toBeTruthy()
+          issuedEvent = yes
+        runs ->
+          predictionList.prev()
+        waitsFor (-> issuedEvent), 1
+
 
     describe '::invalidate()', ->
-      it 'emits a "predictions invalidates" event'
+      it 'emits a "predictions invalidates" event', ->
+        signaledInvalidated = no
+        predictionList.setPredictions(predictions.ellipsis)
+
+        predictionList.onDidInvalidate ->
+          signaledInvalidated = yes
+        runs ->
+          predictionList.invalidate()
+        waitsFor (-> signaledInvalidated), 1
+
 
     describe '::current()', ->
       it 'returns undefined when the prediction list is empty', ->
         predictionList.setPredictions([])
 
         expect(predictionList.current()).toBeUndefined()
+
+      it 'returns the current prediction with tokens, entropy, and buffer position', ->
+        arbitraryPoint = [42, 6]
+        predictionList.setPredictions(predictions.ellipsis, arbitraryPoint)
+
+        {tokens, entropy, position} = predictionList.current()
+        expect(tokens).toEqual ['...']
+        expect(entropy).toBeGreaterThan 0
+        expect(position).toEqual [42, 6]
+
 
   describe '.createUnderlyingArray()', ->
     it 'sorts the list, biassing towards longer, but slightly less probable

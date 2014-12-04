@@ -19,21 +19,17 @@ makeIndents = (string, times) ->
   if times < 1 then ''
   else (string for _ in [1..times]).join('')
 
-# Newline PLUS the next indentation
-newlineHandler =  (peek) ->
-  indentLevel = @getIndentLevel() - (peek is 'DEDENT')
-  indent = makeIndents @getIndentChars(), indentLevel
-
-  "\n#{indent}"
 
 # Formats tokens! Especially useful
-class InsertFormatter
+class TextFormatter
   # Requires a TextEditor.
   constructor: ({@getIndentLevel, @getIndentChars}) ->
 
   # Returns a proper string for the given string.
   format: (tokens) ->
-    text = " "
+    text = ""
+    @additionalIndent = 0
+
     for i in [0...tokens.length]
       # Have a peek token.
       [token, peekToken] = [tokens[i], tokens[i + 1]]
@@ -44,13 +40,38 @@ class InsertFormatter
           "#{token} "
     text
 
+  # Internal: Emits a newline PLUS the next indentation.
+  handleNewline: (peek) ->
+    indentLevel =
+      @getIndentLevel() + @additionalIndent - (peek is '<DEDENT>')
+    console.assert indentLevel >= 0
+    "\n#{makeIndents @getIndentChars(), indentLevel}"
+
   specialTokens:
-    '<NEWLINE>': newlineHandler
-    '<NL>': newlineHandler
-    # Simply emit the indent string...
-    '<INDENT>': (editor) -> @getIndentChars()
-    # This is a no-op since the newline handles this stuff already!
-    'DEDENT': () -> ''
+    '<NEWLINE>': TextFormatter::handleNewline
+    '<NL>': TextFormatter::handleNewline
+    '<INDENT>': ->
+      @additionalIndent++
+      # Simply emits the indent string.
+      @getIndentChars()
+    '<DEDENT>': ->
+      @additionalIndent--
+      # Nothing to output since handleNewline's already got this.
+      ''
 
+  # Internal: Returns an 'indent spy' based on the given TextEditor instance.
+  #
+  # An indent spy is an object that contains these properties:
+  #
+  #  * getIndentChars: {Function} that returns the string used to indent a
+  #                    line. For example, a tab for tab indents, or two
+  #                    spaces for 2 space indents
+  #  * getIndentLevel: {Function} that returns the indent level for the
+  #                    current buffer line.
+  @makeEditorIndentSpy: (editor) ->
+    getIndentChars: editor.getTabText.bind(editor)
+    getIndentLevel: ->
+      {row} = editor.getCursorBufferPosition()
+      editor.indentationForBufferRow(row)
 
-module.exports = {InsertFormatter}
+module.exports = TextFormatter

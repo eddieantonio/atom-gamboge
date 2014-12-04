@@ -20,14 +20,15 @@ module.exports =
 # Stores a bunch of sorted predictions. Keeps track of the currently
 # active predictions.
 class PredictionList
+  predictions: []
+  position: [0, 0]
+  index: 0
 
   # Creates the initial prediction list.
-  constructor: (predictions) ->
-    @_predictions = []
-    @_index = 0
+  constructor: (predictions, bufferPosition) ->
     @emitter = new Emitter
 
-    @setPredictions predictions if predictions?
+    @setPredictions(predictions, bufferPosition) if predictions?
 
   # Get the next prediction.
   next: -> @changeRelative +1
@@ -42,26 +43,30 @@ class PredictionList
       when amount > 0 then 'next'
       else 'prev'
 
-    @_index += amount
+    @index += amount
 
     wrapped = switch
-      when @_predictions.length is 0 then false
-      when not (0 <= @_index < @_predictions.length)
+      when @predictions.length is 0 then false
+      when not (0 <= @index < @predictions.length)
         # Wrap the value around.
-        @_index %%= @_predictions.length
-        false
-      else true
+        @index %%= @predictions.length
+        true
+      else false
 
-    status = {index: @_index, direction, wrapped, target: @}
+    status = {index: @index, direction, wrapped, target: @}
 
     @emitter.emit 'did-change-index', status
     status
 
   # Replace the predictions with a brand new set.
-  setPredictions: (newPredictions) ->
+  setPredictions: (newPredictions, bufferPosition) ->
     @invalidate()
-    @_predictions = PredictionList.createUnderlyingArray(newPredictions)
-    @_index = 0
+    @predictions = PredictionList.createUnderlyingArray(newPredictions)
+    @index = 0
+
+    # Set this AFTER we've created the underlying array, so as to not have
+    # inconsistent properties. 
+    @position = bufferPosition
 
     @emitter.emit 'did-predictions-change', @
     # Trigger the 'changed index event' with the new index 0.
@@ -73,13 +78,17 @@ class PredictionList
 
 
   # Returns whether the predictions are empty.
-  isEmpty: -> @_predictions.length is 0
-  # Returns the current prediction.
-  current: -> @_predictions[@_index]
+  isEmpty: -> @predictions.length is 0
+  # Returns the current prediction, with the current buffer position.
+  current: ->
+    if @predictions[@index]?
+      # Create a new object with the position AND the prediction.
+      _.extend({@position}, @predictions[@index])
+    
   # Returns the current index in the prediction list.
-  index: -> @_index
+  index: -> @index
   # Returns the amount of predictions.
-  length: -> @_predictions.length
+  length: -> @predictions.length
 
 
   # Calls callback when the prediction list has changed.

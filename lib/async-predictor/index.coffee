@@ -13,26 +13,6 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-{WorkspaceView} = require 'atom'
-
-describe "Gamboge", ->
-  [workspaceView] = []
-
-  beforeEach ->
-    atom.workspaceView = workspaceView = new WorkspaceView
-    atom.workspaceView.attachToDom()
-
-    runs ->
-      atom.workspaceView.simulateDomAttachment()
-
-  describe 'upon activation', ->
-    beforeEach ->
-      waitsForPromise ->
-        atom.packages.activatePackage('gamboge')
-
-    describe 'when an editor is created', ->
-      it 'binds the appropriate objects to it.'
-
-    describe 'when an editor is destroyed', ->
-      it 'cleans up all subscriptions associated with it'
-
+# There is only one predictor!
+module.exports =
+  defaultPredictor: require('./unnaturalcode-predictor').predict
