@@ -22,7 +22,7 @@ PredictionList = require '../lib/prediction-list'
 
 predictions = require './fixtures/predictions'
 
-fdescribe "EditorSpy", ->
+describe "EditorSpy", ->
   [predictionList, editor, editorSpy, $editor] = []
 
   beforeEach ->
@@ -36,6 +36,7 @@ fdescribe "EditorSpy", ->
         editor = e
         atom.workspaceView.attachToDom()
         $editor = $(atom.views.getView(editor))
+        editor.setText('')
 
     runs ->
       predictionList = new PredictionList
@@ -105,9 +106,53 @@ fdescribe "EditorSpy", ->
 
       # TODO: test :not(.gamboge)
 
-  xdescribe 'interaction with PredictionList', ->
-    it 'listens to changes in text predictions'
-    it 'inserts text when prompted'
-    it 'invalidates the current preidction when the buffer is changed'
-    it 'notifies its PredictionList of cursor events in the editor'
+  fdescribe 'interaction with PredictionList', ->
+    beforeEach ->
+      editor.setText('')
+    xit 'invalidates the current prediction when the buffer is changed', ->
+      spyOn(predictionList, 'setPredictions').andCallThrough()
+
+      # NOTE: This test knows *waaaaaay* too much about the inner workings of
+      # the class.
+      originalPredictions = predictions['start of file']
+
+      # A prediction should be active.
+      predictionList.setPredictions originalPredictions, [0, 0]
+
+      # Now create the editor spy...
+      editorSpy = new EditorSpy(predictionList, editor)
+
+      newPredictions = predictions['after for i in']
+      typedText = 'for i in'
+
+      # When the editor calls its predict method, intercept it with our own
+      # "HTTP request".
+      spyOn(editorSpy, 'predict').andCallFake (text, done) ->
+        expect(text).toBe typedText
+        done(newPredictions)
+
+      stoppedChanging = no
+      editor.onDidStopChanging ->
+        stoppedChange = yes
+      waitsFor((-> stoppedChanging), 301)
+
+      # This will trigger a change event.
+      editor.insertText(typedText)
+
+      setTimeout(->
+        expect(predictionList.invalidate).toHaveBeenCalled()
+      , 1000)
+
+      expect(editor.getText()).toBe typedText
+
+    xit 'notifies its PredictionList of cursor events in the editor', ->
+      # Get the test setup.
+      editor.setText('for i in')
+      spyOn(predictionList, 'invalidate').andCallThrough()
+
+      editorSpy = new EditorSpy(predictionList, editor)
+
+      # An arbitrary move.
+      editor.moveToBeginningOfWord()
+      expect(predictionList.invalidate).toHaveBeenCalled()
 

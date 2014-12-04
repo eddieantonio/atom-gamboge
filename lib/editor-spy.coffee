@@ -51,24 +51,22 @@ class EditorSpy
     indentSpy = TextFormatter.makeEditorIndentSpy(@editor)
     @insertFormatter = new TextFormatter(indentSpy)
 
-    # LISTEN TO ALL OF THE EVENTS!
+    # Listen to all of the events!
     @registerEvents()
 
   registerEvents: ->
     # Updates the prediction model. Invoked 300ms after last buffer change.
     # TODO: use `onDidChange` instead?
-    @editor.onDidStopChanging =>
+    @subscriptions.add @editor.onDidChange =>
       return @resetChangeIgnorance() if @lastChangeWasPredictionInsert
       @askForPredictions()
 
     @subscriptions.add atom.commands.add '.gamboge',
-      'gamboge:show-suggestions': => @askForPredictions()
-      'gamboge:complete': => @completeTokens n: 1
-      'gamboge:complete-all': => @completeTokens all: yes
-      'gamboge:next-prediction': => @predictionList.next()
+      'gamboge:show-suggestions':    => @askForPredictions()
+      'gamboge:complete':            => @completeTokens n: 1
+      'gamboge:complete-all':        => @completeTokens all: yes
+      'gamboge:next-prediction':     => @predictionList.next()
       'gamboge:previous-prediction': => @predictionList.prev()
-    @subscriptions.add atom.commands.add '.editor',
-      'gamboge:whatever': => console.log('Alex is a dumb butt')
 
   completeTokens: ({n, all}) ->
     {entropy, tokens} = @predictionList.current()
@@ -83,12 +81,23 @@ class EditorSpy
     @askForPredictions()
 
   askForPredictions: ->
-    text = @getTextForCursorContext()
+    afterCursor = {row, column} = @editor.getCursorBufferPosition()
+    text = @getTextForCursorContext(afterCursor)
+
+    @predictionMarker = @editor.markBufferPosition afterCursor,
+      invalidate: 'touch'
+      persistent: no
+
+    oneTimeSubscription = @predictionMarker.onDidChange (marker) =>
+      unless marker.isValid
+        oneTimeSubscription.dispose()
+        @destroyMarker()
+        @predictionList.invalidate()
 
     # Set off prediction request
     @predict text, (predictions) =>
       return unless predictions?
-      @predictionList.setPredictions predictions
+      @predictionList.setPredictions(predictions, afterCursor)
 
   # Using markers, shows the GhostText.
   showGhostText: (prediction) ->
@@ -104,15 +113,6 @@ class EditorSpy
 
     # TODO: Check if the cursor is on screen!
 
-    @predictionMarker = @editor.markBufferPosition afterCursor,
-      invalidate: 'touch'
-      persistent: no
-
-    @predictionMarker.onDidChange (marker) =>
-      unless marker.isValid
-        @destroyMarker()
-        @predictionList.invalidate()
-
   # Get rid of the prediction marker and any annotation associated with it.
   destroyMarker: ->
     @predictionMarker?.destroy()
@@ -126,9 +126,8 @@ class EditorSpy
     @lastChangeWasPredictionInsert = false
 
   # Gets a whole bunch of text prior to the cursor.
-  getTextForCursorContext: ->
+  getTextForCursorContext: (cursorPosition) ->
     # Get text for the current line.
-    cursorPosition = @editor.getCursorBufferPosition()
     beginningOfLine = new Point(cursorPosition.row, 0)
     contextRange = new Range(beginningOfLine, cursorPosition)
 
