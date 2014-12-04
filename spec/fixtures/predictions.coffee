@@ -1,6 +1,6 @@
 module.exports =
   # Encodes realistic entropies.
-  'after: for i in': [
+  'after for i in': [
     [0.337218, ["in", "range" ] ]
     [0.345281, ["in", "range", "(" ] ]
     [1.85889,  ["in", "range", "(", "5" ] ]
