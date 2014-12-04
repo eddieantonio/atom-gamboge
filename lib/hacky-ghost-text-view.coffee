@@ -24,8 +24,11 @@ class HackyGhostView
   subscriptions: null
   $ghostText: null
 
-  constructor: (predictions, @$editor) ->
+  constructor: (predictions, editorElement) ->
     @subscriptions = new CompositeDisposable
+    # Coerce the input into a jQuery.
+    @$editor = $(editorElement)
+    console.assert not @$editor.empty()
 
     @subscriptions.add predictions.onDidChangeIndex (index) =>
       @removeAll()
@@ -45,11 +48,13 @@ class HackyGhostView
   setAt: (tokens, position) ->
     [row, column] = position
 
+    debugger
+
     # XXX: This is a *disgusting* and fragile way to add the ghost-text; I
     # easily expect this to be broken in in the near future. I really
     # shouldn't be messing around with the editor DOM, but it's effective as
     # long as we're responsible with it...
-    $row = $(".line[data-screen-row=#{row}]")
+    $row = @$editor.find(".line[data-screen-row=#{row}]")
     console.assert not $row.empty()
 
     $sourceSpan = $row.children('.source, .text').first()
@@ -59,12 +64,12 @@ class HackyGhostView
     $sourceSpan.append @$ghostText
 
     # This class will be useful in selectors.
-    @$editor.addClass 'gamboge'
+    @$editor.addClass('gamboge')
 
   removeAll: ->
     return unless @$ghostText?
     @$editor.find('.gamboge-ghost, .gamboge-invisible').remove()
-    @$editor.removeClass 'gamboge'
+    @$editor.removeClass('gamboge')
     @$ghostText = null
 
   destroy: ->
