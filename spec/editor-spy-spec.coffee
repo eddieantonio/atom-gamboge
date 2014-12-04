@@ -106,7 +106,7 @@ describe "EditorSpy", ->
 
       # TODO: test :not(.gamboge)
 
-  fdescribe 'interaction with PredictionList', ->
+  describe 'interaction with PredictionList', ->
     beforeEach ->
       editor.setText('')
     xit 'invalidates the current prediction when the buffer is changed', ->
@@ -127,7 +127,7 @@ describe "EditorSpy", ->
 
       # When the editor calls its predict method, intercept it with our own
       # "HTTP request".
-      spyOn(editorSpy, 'predict').andCallFake (text, done) ->
+      jasmine.createSpy(editorSpy, 'predict').andCallFake (text, done) ->
         expect(text).toBe typedText
         done(newPredictions)
 
