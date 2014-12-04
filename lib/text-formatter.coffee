@@ -44,6 +44,7 @@ class TextFormatter
   handleNewline: (peek) ->
     indentLevel =
       @getIndentLevel() + @additionalIndent - (peek is '<DEDENT>')
+    console.assert indentLevel >= 0
     "\n#{makeIndents @getIndentChars(), indentLevel}"
 
   specialTokens:
@@ -55,7 +56,6 @@ class TextFormatter
       @getIndentChars()
     '<DEDENT>': ->
       @additionalIndent--
-      console.assert @additionalIndent >= 0
       # Nothing to output since handleNewline's already got this.
       ''
 
