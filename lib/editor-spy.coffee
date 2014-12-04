@@ -43,8 +43,9 @@ class EditorSpy
   predictionList: null
   # We don't need any references to any views.
 
-  constructor: (@predictionList, @editor) ->
-    @buffer = @editor.getBuffer()
+  constructor: (@predictionList, @editor, @predict) ->
+    unless @predict?
+      @predict = require('./async-predictor').defaultPredictor
 
     # The insert formater needs to know how to get the current indenting
     # level...
@@ -56,7 +57,6 @@ class EditorSpy
 
   registerEvents: ->
     # Updates the prediction model. Invoked 300ms after last buffer change.
-    # TODO: use `onDidChange` instead?
     @subscriptions.add @editor.onDidChange =>
       return @resetChangeIgnorance() if @lastChangeWasPredictionInsert
       @askForPredictions()
@@ -94,24 +94,13 @@ class EditorSpy
         @destroyMarker()
         @predictionList.invalidate()
 
+    # TODO: use grammar.name; need a look-up table for each language.
+    language = 'py'
+
     # Set off prediction request
-    @predict text, (predictions) =>
+    @predict text, language, (predictions) =>
       return unless predictions?
       @predictionList.setPredictions(predictions, afterCursor)
-
-  # Using markers, shows the GhostText.
-  showGhostText: (prediction) ->
-    return unless prediction
-
-    {tokens} = prediction
-
-    # Get a marker for the place immediately adjacent the cursor.
-    afterCursor = @editor.getCursorBufferPosition()
-
-    # Oh dear...
-    {row, column} = @editor.getCursorScreenPosition()
-
-    # TODO: Check if the cursor is on screen!
 
   # Get rid of the prediction marker and any annotation associated with it.
   destroyMarker: ->
@@ -135,29 +124,8 @@ class EditorSpy
     @editor.getTextInBufferRange(contextRange)
 
 
-  # Internal: Do the prediction, calling `done(maybeData)` when finished.
-  # maybeData can be null, to indicate that the prediction did not succeed.
-  predict: (text, done) ->
-    origin = atom.config.get 'gamboge.unnaturalRESTOrigin'
-
-    # TODO: use grammar.name; need a look-up table for each language.
-    lang = 'py'
-
-    url = "http://#{origin}/#{lang}/predict/"
-    xhr = new XMLHttpRequest()
-    xhr.open('POST', url, yes)
-    xhr.setRequestHeader('Accept', 'application/json')
-    xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded')
-    xhr.addEventListener 'load', =>
-      return done(null) unless xhr.status is 200
-      {suggestions} = JSON.parse(xhr.responseText)
-      done(suggestions)
-    xhr.send("s=#{encodeURIComponent(text)}")
-
   # Tear down any state and detach.
   destroy: ->
     @subscriptions.dispose()
     @detach()
 
-# TODO: Make a popover suggestion list ACTUALLY based on autocomplete!
-# https://github.com/atom/autocomplete/blob/master/lib/autocomplete-view.coffee
