@@ -100,7 +100,7 @@ class EditorSpy
     # Set off prediction request
     @predict text, language, (predictions) =>
       return unless predictions?
-      @predictionList.setPredictions(predictions, afterCursor)
+      @predictionList.setPredictions(predictions, [row, column])
 
   # Get rid of the prediction marker and any annotation associated with it.
   destroyMarker: ->
