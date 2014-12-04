@@ -1,0 +1,21 @@
+#!/bin/sh
+
+function run_test {
+    # This pattern finds fffdescribes and xxxits. Kinky.
+    warnings=`git grep -Ene '\<([fx]){1,3}(describe|it)\>'`
+    if [ ! -z "$warnings" ]; then
+        echo "\033[1;33mWarning\033[m\033[1m: Focused and skipped specs:"
+        printf "\e[m"
+        echo "$warnings"
+    fi
+    # TODO: add optional fail on warnings.
+}
+
+case "${1}" in
+    --about )
+        echo "Warns for skipped and focused Jasmine specs."
+        ;;
+    * )
+        run_test
+        ;;
+esac
