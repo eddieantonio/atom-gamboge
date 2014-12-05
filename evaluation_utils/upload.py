@@ -60,7 +60,7 @@ def python_files_from_repos(exclude={}):
             yield filename
 
 def train_corpus_excluding(repo):
-    logging.debug('Training everything EXCEPT %r', repo)
+    logging.info('Training everything EXCEPT %r', repo)
     for filename in python_files_from_repos(exclude=repo):
         train_from_file(filename)
 
@@ -137,7 +137,12 @@ def main():
 
 if __name__ == '__main__':
     if '--debug' in sys.argv:
-        logging.basicConfig(level=logging.DEBUG,
-                            format='\033[46;1m%(levelname)8s => '
-                                   '%(message)s\033[m')
+        debug_fmt = '\033[46;1m%(levelname)8s => %(message)s\033[m'
+        logging.basicConfig(level=logging.DEBUG, format=debug_fmt)
+    else:
+        standard_fmt = '\033[46;1m    %(asctime)5s %(message)s [%(module)s]\033[m'
+        logging.basicConfig(level=logging.INFO,
+                            format=standard_fmt,
+                            stream=sys.stderr,
+                            datefmt='%H:%M')
     sys.exit(main())
