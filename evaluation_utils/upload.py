@@ -28,6 +28,7 @@ def get_index(dirname=context.directory):
     return context.index
 
 def delete_corpus():
+    logging.debug('Deleting corpus...')
     url = 'http://localhost:5000/py/'
     r = requests.delete(url)
     # Either OK or No Content
@@ -53,11 +54,13 @@ def python_files_from_repos(exclude={}):
     for repo in context.index:
         if repo in exclusions:
             continue
+        logging.debug('Will train %r', repo)
         repo_root = dir_for_repo(repo)
         for filename in all_python_files(repo_root):
             yield filename
 
 def train_corpus_excluding(repo):
+    logging.debug('Training everything EXCEPT %r', repo)
     for filename in python_files_from_repos(exclude=repo):
         train_from_file(filename)
 
@@ -109,11 +112,13 @@ def json_tokens_for_repo(repo):
     try:
         json_string = json.dumps(files, ensure_ascii=True)
     except UnicodeDecodeError:
-        logging.error('Could not JSONify tokens for %r' % (Repo,))
+        logging.error('Could not JSONify tokens for %r', repo)
         json_string = '[]'
 
     assert '\n' not in json_string
     return json_string
+
+input_ = input if sys.version_info.major == 3 else raw_input
 
 def main():
     repos = get_index('corpus')
@@ -124,10 +129,15 @@ def main():
         json_tokens = (json_tokens_for_repo(repo))
         if json_tokens == '[]':
             continue
+        print(json_tokens)
         # Send the other process the JSONified tokens.
         # We're blocked until the other process tells us it's done.
-        assert input() == 'fuzzypickles'
+        assert input_() == 'fuzzypickles'
 
 
 if __name__ == '__main__':
+    if '--debug' in sys.argv:
+        logging.basicConfig(level=logging.DEBUG,
+                            format='\033[46;1m%(levelname)8s => '
+                                   '%(message)s\033[m')
     sys.exit(main())
