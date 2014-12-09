@@ -51,7 +51,7 @@ class GambogeView extends View
     @div class: 'gamboge hidden'
 
   initialize: (@editor) ->
-    @editorView = $(atom.workspace.getView(@editor))
+    @editorView = $(atom.views.getView(@editor))
     @buffer = @editor.getBuffer()
 
     # The insert formater needs to know how to get the current indenting
