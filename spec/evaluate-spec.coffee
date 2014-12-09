@@ -45,20 +45,19 @@ fdescribe "The empirical evaluation", ->
   #
   #  * write a file with only indent assistance.
 
-  describe 'Atom', ->
-    it "tests unassisted typing in Atom", ->
+  it "tests unassisted typing in Atom", ->
       testEnvironment 'plain-text', require('../typers/plain-text')
 
   # Evaluation 2:
   #
   #  * write a file using "best guess" autocomplete+
-  describe 'AutoComplete+', ->
+  xdescribe 'AutoComplete+', ->
     it "tests AutoComplete+"
 
   # Evaluation 3:
   #
   #  * Write a file using Gamboge.
-  describe 'Gamboge', ->
+  xdescribe 'Gamboge', ->
     beforeEach ->
       waitsForPromise ->
         atom.packages.activatePackage('gamboge')
@@ -66,7 +65,7 @@ fdescribe "The empirical evaluation", ->
 
     it "tests Gamboge"
 
-  describe 'Optional Tests', ->
+  xdescribe 'Optional Tests', ->
     it "tests AutoComplete+Gamboge"
     it "tests AutoComplete"
 
