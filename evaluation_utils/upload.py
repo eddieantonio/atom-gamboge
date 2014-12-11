@@ -10,6 +10,7 @@ import logging
 import os
 import requests
 import sys
+import subprocess32 as subprocess
 
 from collections import namedtuple
 
@@ -194,13 +195,14 @@ def write_cross_entropy(repo):
     logging.info("Wrote xentropies for %s for %s", location, repo)
 
 
-def run_atom():
+def run_atom(repo):
     # run apm test
     if not context.should_run_atom:
         return
     logger.info('Running Atom...')
-    logger.error('Not implemented!')
-
+    status =  subprocess.call(['apm', 'test'])
+    if status != 0:
+        logger.warn('Atom returned with %d status on %r', status, repo)
 
 def config_logging():
     # Set up a the logger...
@@ -242,7 +244,7 @@ def main(*args):
         train_corpus_excluding(repo)
         write_json_tokens(json_tokens_for_repo(repo))
         write_cross_entropy(repo)
-        run_atom()
+        run_atom(repo)
 
         # Force a collection... just to be sure.
         gc.collect()
