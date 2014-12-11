@@ -15,13 +15,11 @@
 
 fs = require 'fs'
 
+{$} = require 'space-pen'
 PythonShell = require 'python-shell'
 
-SCRIPT_LOCATION = "#{__dirname}/../../evaluation_utils/upload.py"
-
-# Tokens for the current project
-_projectTokens = null
-
+# Load the tokens from the sample commited.
+sampleTokens = require './sample'
 
 module.exports =
 
@@ -96,16 +94,3 @@ tokenize = (text, done) ->
   shell.send(text).end (err) ->
     if err? then done(err)
     else done(err, JSON.parse(result))
-
-
-startInteractiveScript = (onNext) ->
-  shell = new PythonShell 'upload.py',
-    mode: 'json'
-    scriptPath: './evaluation_utils/'
-
-  shell.on 'message', (message) ->
-    onNext null, {projecTokens: message}, ->
-      shell.send 'fuzzypickles'
-
-  shell.on 'close', ->
-    endOfOutput = yes
