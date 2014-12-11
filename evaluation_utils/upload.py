@@ -2,12 +2,14 @@
 
 # Requires requests library
 
-import sys
 import fnmatch
+import csv
+import gc
 import json
+import logging
 import os
 import requests
-import logging
+import sys
 
 from collections import namedtuple
 
@@ -17,15 +19,20 @@ Repo = namedtuple('Repo', 'owner name default_branch')
 
 logger = logging.getLogger(__name__)
 
+basedir = os.path.dirname(os.path.dirname(__file__))
+
+
 class context(object):
 
     "Global object... to make things easier, but hackier."
     directory = u'corpus'
     index = None
     should_train = True
-    calculate_cross_entropy = False
-    token_json_location = os.path.join(os.path.dirname(os.path.dirname(__file__)),
-                                       'spec', 'evaluate-helper', 'tokens.json')
+    should_calculate_cross_entropy = False
+    should_run_atom = True
+    token_json_location = os.path.join(basedir, 'spec', 'evaluate-helper',
+                                       'tokens.json')
+    result_location = os.path.join(basedir, 'results')
 
 
 def get_index(dirname=context.directory):
@@ -80,6 +87,17 @@ def python_files_from_repos(exclude={}):
             yield filename
 
 
+def calculate_cross_entropy(filename):
+    url = 'http://localhost:5000/py/xentropy'
+
+    logger.debug('Requesting cross-entropy for %s', filename)
+    with open(filename, 'rb') as f:
+        r = requests.post(url, files=dict(f=f))
+    assert r.status_code == 200
+    content = r.json()
+    return {'filename': filename, 'xentropy': content['xentropy']}
+
+
 def train_corpus_excluding(repo):
     logger.info('Training everything EXCEPT %r', repo)
     for filename in python_files_from_repos(exclude=repo):
@@ -108,6 +126,7 @@ def dir_for_repo(repo):
 
 
 def tokens_for_repo(repo):
+    'Oh yeah, it also does cross-entropy :/'
     # The root directory of the repository:
     repo_root = dir_for_repo(repo)
 
@@ -119,6 +138,13 @@ def tokens_for_repo(repo):
                      tokens=tokenize_file(filename))
         files.append(entry)
     return files
+
+
+def calculate_per_file_repo_cross_entropy(repo):
+    for filename in all_python_files(dir_for_repo(repo)):
+        entropy = calculate_cross_entropy(filename)
+        yield filename, entropy
+
 
 
 def json_tokens_for_repo(repo):
@@ -154,23 +180,27 @@ def write_json_tokens(contents):
     logger.debug("Wrote tokens to '%s'", location)
 
 
-def main(*args):
-    repos = get_index('corpus')
+def write_cross_entropy(repo):
+    if not context.should_calculate_cross_entropy:
+        return
 
-    if '--no-train' in args:
-        logger.info('Will NOT train for this run.')
-        context.should_train = False
+    xentropies = calculate_per_file_repo_cross_entropy(repo)
+    location = os.path.join(context.result_location, repo.name + '.json')
+    with open(location, 'wb') as f:
+        writer = csv.writer(f)
+        for info in xentropies:
+            writer.writerow(info)
 
-    if '--xentropy' in args:
-        logger.info('Will calculate cross entropy of each file.')
-        context.calculate_cross_entropy = True
+    logging.info("Wrote xentropies for %s for %s", location, repo)
 
-    for repo in repos:
-        delete_corpus()
-        train_corpus_excluding(repo)
-        json_tokens = (json_tokens_for_repo(repo))
-        write_json_tokens(json_tokens)
-        # run apm test
+
+def run_atom():
+    # run apm test
+    if not context.should_run_atom:
+        return
+    logger.info('Running Atom...')
+    logger.error('Not implemented!')
+
 
 def config_logging():
     # Set up a the logger...
@@ -189,6 +219,34 @@ def config_logging():
                             stream=sys.stderr,
                             datefmt='%H:%M')
 
+
+def main(*args):
+    repos = get_index('corpus')
+
+    # "parse args"
+    if '--no-train' in args:
+        logger.info('Will NOT train for this run.')
+        context.should_train = False
+
+    if '--xentropy' in args:
+        logger.info('Will calculate cross entropy of each file.')
+        context.should_calculate_cross_entropy = True
+        if not context.should_train:
+            logger.warn('Cross-entropy without training is strange.')
+
+    if '--no-atom' in args:
+        context.should_run_atom = False
+
+    for repo in repos:
+        delete_corpus()
+        train_corpus_excluding(repo)
+        write_json_tokens(json_tokens_for_repo(repo))
+        write_cross_entropy(repo)
+        run_atom()
+
+        # Force a collection... just to be sure.
+        gc.collect()
+
 if __name__ == '__main__':
     config_logging()
-    sys.exit(main(sys.argv))
+    sys.exit(main(*sys.argv))
