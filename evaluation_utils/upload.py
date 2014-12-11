@@ -41,7 +41,7 @@ def delete_corpus():
     if not context.should_train:
         return
 
-    logging.debug('Deleting corpus...')
+    logger.debug('Deleting corpus...')
     url = 'http://localhost:5000/py/'
     r = requests.delete(url)
     # Either OK or No Content
@@ -74,14 +74,14 @@ def python_files_from_repos(exclude={}):
     for repo in context.index:
         if repo in exclusions:
             continue
-        logging.debug('Will train %r', repo)
+        logger.debug('Will train %r', repo)
         repo_root = dir_for_repo(repo)
         for filename in all_python_files(repo_root):
             yield filename
 
 
 def train_corpus_excluding(repo):
-    logging.info('Training everything EXCEPT %r', repo)
+    logger.info('Training everything EXCEPT %r', repo)
     for filename in python_files_from_repos(exclude=repo):
         train_from_file(filename)
 
@@ -137,7 +137,7 @@ def json_tokens_for_repo(repo):
     try:
         json_string = json.dumps(files, ensure_ascii=True)
     except UnicodeDecodeError:
-        logging.error('Could not JSONify tokens for %r', repo)
+        logger.error('Could not JSONify tokens for %r', repo)
         json_string = '[]'
 
     return json_string
@@ -151,18 +151,18 @@ def write_json_tokens(contents):
     with open(location, 'wb') as f:
         f.write(contents)
 
-    logging.debug("Wrote tokens to '%s'", location)
+    logger.debug("Wrote tokens to '%s'", location)
 
 
 def main(*args):
     repos = get_index('corpus')
 
     if '--no-train' in args:
-        logging.info('Will NOT train for this run.')
+        logger.info('Will NOT train for this run.')
         context.should_train = False
 
     if '--xentropy' in args:
-        logging.info('Will calculate cross entropy of each file.')
+        logger.info('Will calculate cross entropy of each file.')
         context.calculate_cross_entropy = True
 
     for repo in repos:
@@ -172,17 +172,23 @@ def main(*args):
         write_json_tokens(json_tokens)
         # run apm test
 
-if __name__ == '__main__':
+def config_logging():
     # Set up a the logger...
-    logging.getLogger('').addFilter(logging.Filter(__name__))
-    if '--debug' in sys.argv:
-        debug_fmt = '\033[46;1m%(levelname)8s => %(message)s\033[m'
+    from big_dumb_filter import BigDumbFilter
 
+    logging.getLogger(__name__).addFilter(BigDumbFilter())
+    logging.getLogger("requests").setLevel(logging.WARNING)
+
+    if '--debug' in sys.argv:
+        debug_fmt = '%(bgcolor)s%(levelname)8s => %(message)s\033[m'
         logging.basicConfig(level=logging.DEBUG, format=debug_fmt)
     else:
-        standard_fmt = '\033[46;1m    %(asctime)5s %(message)s [%(module)s]\033[m'
+        standard_fmt = '%(bgcolor)s    %(asctime)5s %(message)s\033[m'
         logging.basicConfig(level=logging.INFO,
                             format=standard_fmt,
                             stream=sys.stderr,
                             datefmt='%H:%M')
+
+if __name__ == '__main__':
+    config_logging()
     sys.exit(main(sys.argv))
