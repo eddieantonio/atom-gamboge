@@ -15,10 +15,18 @@ from json_tokenizer import tokenize_file
 
 Repo = namedtuple('Repo', 'owner name default_branch')
 
-# Global object... to make things easier, but hackier.
+logger = logging.getLogger(__name__)
+
 class context(object):
+
+    "Global object... to make things easier, but hackier."
     directory = u'corpus'
     index = None
+    should_train = True
+    calculate_cross_entropy = False
+    token_json_location = os.path.join(os.path.dirname(os.path.dirname(__file__)),
+                                       'spec', 'evaluate-helper', 'tokens.json')
+
 
 def get_index(dirname=context.directory):
     context.directory = dirname
@@ -27,18 +35,25 @@ def get_index(dirname=context.directory):
     context.index = [Repo(**repo) for repo in index]
     return context.index
 
+
 def delete_corpus():
+    # Skip silently...
+    if not context.should_train:
+        return
+
     logging.debug('Deleting corpus...')
     url = 'http://localhost:5000/py/'
     r = requests.delete(url)
     # Either OK or No Content
     assert r.status_code in (200, 204)
 
+
 def train_from_file(filename):
     url = 'http://localhost:5000/py/'
     with open(filename, 'rb') as f:
         r = requests.post(url, files=dict(f=f))
     assert r.status_code == 202
+
 
 def python_files_from_repos(exclude={}):
     """
@@ -50,6 +65,11 @@ def python_files_from_repos(exclude={}):
     u'corpus/aaronsw/html2text/html2text.py'
 
     """
+
+    # Skip silently...
+    if not context.should_train:
+        return
+
     exclusions = set(exclude)
     for repo in context.index:
         if repo in exclusions:
@@ -59,10 +79,12 @@ def python_files_from_repos(exclude={}):
         for filename in all_python_files(repo_root):
             yield filename
 
+
 def train_corpus_excluding(repo):
     logging.info('Training everything EXCEPT %r', repo)
     for filename in python_files_from_repos(exclude=repo):
         train_from_file(filename)
+
 
 def all_python_files(repo_root):
     """
@@ -80,8 +102,10 @@ def all_python_files(repo_root):
         for filename in fnmatch.filter(names, '*.py'):
             yield os.path.join(root, filename)
 
+
 def dir_for_repo(repo):
     return os.path.join(context.directory, repo.owner, repo.name)
+
 
 def tokens_for_repo(repo):
     # The root directory of the repository:
@@ -95,6 +119,7 @@ def tokens_for_repo(repo):
                      tokens=tokenize_file(filename))
         files.append(entry)
     return files
+
 
 def json_tokens_for_repo(repo):
     r"""
@@ -115,29 +140,44 @@ def json_tokens_for_repo(repo):
         logging.error('Could not JSONify tokens for %r', repo)
         json_string = '[]'
 
-    assert '\n' not in json_string
     return json_string
 
-input_ = input if sys.version_info.major == 3 else raw_input
 
-def main():
+def write_json_tokens(contents):
+    if contents == '[]':
+        return
+
+    location = context.token_json_location
+    with open(location, 'wb') as f:
+        f.write(contents)
+
+    logging.debug("Wrote tokens to '%s'", location)
+
+
+def main(*args):
     repos = get_index('corpus')
+
+    if '--no-train' in args:
+        logging.info('Will NOT train for this run.')
+        context.should_train = False
+
+    if '--xentropy' in args:
+        logging.info('Will calculate cross entropy of each file.')
+        context.calculate_cross_entropy = True
 
     for repo in repos:
         delete_corpus()
         train_corpus_excluding(repo)
         json_tokens = (json_tokens_for_repo(repo))
-        if json_tokens == '[]':
-            continue
-        print(json_tokens)
-        # Send the other process the JSONified tokens.
-        # We're blocked until the other process tells us it's done.
-        assert input_() == 'fuzzypickles'
-
+        write_json_tokens(json_tokens)
+        # run apm test
 
 if __name__ == '__main__':
+    # Set up a the logger...
+    logging.getLogger('').addFilter(logging.Filter(__name__))
     if '--debug' in sys.argv:
         debug_fmt = '\033[46;1m%(levelname)8s => %(message)s\033[m'
+
         logging.basicConfig(level=logging.DEBUG, format=debug_fmt)
     else:
         standard_fmt = '\033[46;1m    %(asctime)5s %(message)s [%(module)s]\033[m'
@@ -145,4 +185,4 @@ if __name__ == '__main__':
                             format=standard_fmt,
                             stream=sys.stderr,
                             datefmt='%H:%M')
-    sys.exit(main())
+    sys.exit(main(sys.argv))
