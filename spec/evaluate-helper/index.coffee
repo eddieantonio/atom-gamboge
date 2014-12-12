@@ -13,13 +13,19 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+#$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$#
+#                      MUST BE RUN FROM REPOSITORY ROOT!                       #
+#$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$#
+
 fs = require 'fs'
 
 {$} = require 'space-pen'
 PythonShell = require 'python-shell'
 
 # Load the tokens from the sample commited.
-sampleTokens = require './sample'
+tokenizedFiles = require './tokens'
+
+SHOULD_VERIFY = not process.env.NO_VERIFY
 
 module.exports =
 
@@ -34,29 +40,27 @@ module.exports =
   #
   testEnvironment: (name, fn) ->
     files = []
-    tokenizedFiles = [sampleTokens]
 
     @editor =
       atom.workspaceView.getActiveView().getEditor()
 
     expect(@editor).toBeTruthy()
-    tokenizedFiles.forEach (canonicalTokens) ->
+    tokenizedFiles.forEach ({tokens, filename}) ->
+      canonicalTokens = tokens
       # Empty the text editor...
       @editor.setText ''
 
-      # TODO: allow for async/callback for fn.
+      # TODO: This should also collect prediction-by-prediction stats.
       {keystrokes} = fn.call(@, canonicalTokens)
 
       # XXX: Uh.... get rid of a newline at the end...
       @editor.backspace()
       text = @editor.getText()
 
-      console.log text
-
       # The verification process is:
       #
       # normalized := file | tokenizer
-      # expect that (normalized | typer | tokenizer) === normalized
+      # expect that (normalized | typer | tokenizer) is normalized
       tokens = null
       runs ->
         tokenize text, (err, result) ->
@@ -65,27 +69,31 @@ module.exports =
 
       waitsFor((-> tokens?), 'Expected Python script to terminate.', 500)
 
+      # Continue to the next file if we should verify.
+      return unless SHOULD_VERIFY
       runs ->
         util = require 'util'
         diff =  require('deep-diff').diff(canonicalTokens, tokens)
         console.log(util.inspect(diff, depth: null)) if diff
         expect(tokens).toEqual(canonicalTokens)
 
-        # TODO: Probably should put the file name, just for funsies.
-        files.push({keystrokes})
+        files.push({filename, keystrokes})
 
     waitsFor((->files.length == tokenizedFiles.length), '???', 2**24)
 
     runs ->
       contents = JSON.stringify({name, files})
-      fs.writeFile "results/#{name}.json", contents, (err) ->
+      fs.writeFile "results/#{name}-#{now()}.json", contents, (err) ->
         console.warn "Could not save results for #{name}!" if err?
 
+# Internal: Invokes an external Python process to tokenize the given string.
+#
+# Returns {Object} Python Tokens
 tokenize = (text, done) ->
   PythonShell.defaultOptions =
-    scriptPath: './spec/evaluate-helper/'
+    scriptPath: './evaluation_utils/'
 
-  shell = new PythonShell("json-tokenize.py", mode: 'text')
+  shell = new PythonShell("json_tokenizer.py", mode: 'text')
 
   result = ''
   shell.stdout.on 'data', (message) ->
@@ -94,3 +102,8 @@ tokenize = (text, done) ->
   shell.send(text).end (err) ->
     if err? then done(err)
     else done(err, JSON.parse(result))
+
+
+# Internal: Returns a {String} of the current UNIX timestamp
+now = () ->
+  "" + new Date().getTime()
