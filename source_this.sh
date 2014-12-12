@@ -6,7 +6,7 @@
 # does.
 
 if [ ! -d ./evaluation_utils/.venv ] ; then
-    virutalenv ./evaluation_utils/.venv
+    virtualenv ./evaluation_utils/.venv
     pip install -r ./evaluation_utils/requirements.txt
 fi
 
