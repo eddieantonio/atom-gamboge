@@ -172,13 +172,14 @@ def json_tokens_for_repo(repo):
 
 def write_json_tokens(contents):
     if contents == '[]':
-        return
+        return False
 
     location = context.token_json_location
     with open(location, 'wb') as f:
         f.write(contents)
 
     logger.debug("Wrote tokens to '%s'", location)
+    return True
 
 
 def write_cross_entropy(repo):
@@ -242,9 +243,9 @@ def main(*args):
     for repo in repos:
         delete_corpus()
         train_corpus_excluding(repo)
-        write_json_tokens(json_tokens_for_repo(repo))
+        if write_json_tokens(json_tokens_for_repo(repo)):
+            run_atom(repo)
         write_cross_entropy(repo)
-        run_atom(repo)
 
         # Force a collection... just to be sure.
         gc.collect()
