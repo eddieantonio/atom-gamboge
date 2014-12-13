@@ -168,11 +168,13 @@ class GambogeView extends View
   getTextForCursorContext: ->
     # Get text for the current line.
     cursorPosition = @editor.getCursorBufferPosition()
-    beginningOfLine = new Point(cursorPosition.row, 0)
-    contextRange = new Range(beginningOfLine, cursorPosition)
+    # Get at most five lines of context back.
+    aWhileAgo = new Point(atLeastZero(cursorPosition.row - 5), 0)
+    contextRange = new Range(aWhileAgo, cursorPosition)
 
     # TODO: Get more text than just the current line.
     @editor.getTextInBufferRange(contextRange)
+
 
 
   # Internal: Do the prediction, calling `done(maybeData)` when finished.
@@ -198,6 +200,8 @@ class GambogeView extends View
   destroy: ->
     @editorView.removeClass 'gamboge'
     @detach()
+
+atLeastZero = (num) -> if num < 0 then 0 else num
 
 # TODO: Make a popover suggestion list ACTUALLY based on autocomplete!
 # https://github.com/atom/autocomplete/blob/master/lib/autocomplete-view.coffee
