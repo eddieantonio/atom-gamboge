@@ -13,7 +13,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-{Point, Range, View} = require 'atom'
+{Point, Range, View, CompositeDisposable} = require 'atom'
 {$} = require 'space-pen'
 
 
@@ -42,6 +42,7 @@ class GambogeView extends View
 
   lastChangeWasPredictionInsert: false
   predictionMarker: null
+  subscriptions: new CompositeDisposable
 
   # The model.
   predictionList: new PredictionList
@@ -73,18 +74,12 @@ class GambogeView extends View
       return @resetChangeIgnorance() if @lastChangeWasPredictionInsert
       @askForPredictions()
 
-    @subscribeToCommand @editorView, 'gamboge:show-suggestions', =>
-      @askForPredictions()
-
-    @subscribeToCommand @editorView, 'gamboge:complete', =>
-      @completeTokens n: 1
-    @subscribeToCommand @editorView, 'gamboge:complete-all', =>
-      @completeTokens all: yes
-
-    @subscribeToCommand @editorView, 'gamboge:next-prediction', =>
-      @predictionList.next()
-    @subscribeToCommand @editorView, 'gamboge:previous-prediction', =>
-      @predictionList.prev()
+    @subscriptions.add atom.commands.add '.gamboge',
+      'gamboge:show-suggestions':    => @askForPredictions()
+      'gamboge:complete':            => @completeTokens n: 1
+      'gamboge:complete-all':        => @completeTokens all: yes
+      'gamboge:next-prediction':     => @predictionList.next()
+      'gamboge:previous-prediction': => @predictionList.prev()
 
     @predictionList.onDidChangeIndex (event) =>
       @unshowGhostText()
