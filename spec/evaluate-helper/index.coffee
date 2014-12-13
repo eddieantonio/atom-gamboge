@@ -39,7 +39,7 @@ module.exports =
   #     * `text`       {String} of the generated output.
   #
   testEnvironment: (name, fn) ->
-    files = []
+    filesDone = 0
 
     @editor =
       atom.workspaceView.getActiveView().getEditor()
@@ -57,10 +57,6 @@ module.exports =
       @editor.backspace()
       text = @editor.getText()
 
-      # The verification process is:
-      #
-      # normalized := file | tokenizer
-      # expect that (normalized | typer | tokenizer) is normalized
       tokens = null
       runs ->
         tokenize text, (err, result) ->
@@ -70,21 +66,21 @@ module.exports =
       waitsFor((-> tokens?), 'Expected Python script to terminate.', 500)
 
       # Continue to the next file if we should verify.
-      return unless SHOULD_VERIFY
       runs ->
-        util = require 'util'
-        diff =  require('deep-diff').diff(canonicalTokens, tokens)
-        console.log(util.inspect(diff, depth: null)) if diff
-        expect(tokens).toEqual(canonicalTokens)
+        verify(tokens, canonicalTokens) if SHOULD_VERIFY
+        info = {name, filename, keystrokes}
+        # Save the contets
+        contents = JSON.stringify(info)
+        fs.writeFile "results/#{name}-#{now()}.json", contents, (err) ->
+          console.warn "Could not save results for #{name}!" if err?
+        filesDone++
+        process.stdout.write "\x1b[46mFinished \x1b[1m#{filename}\x1b[m\n"
 
-        files.push({filename, keystrokes})
-
-    waitsFor((->files.length == tokenizedFiles.length), '???', 2**24)
+    waitsFor((->filesDone == tokenizedFiles.length), '???', 2**24)
 
     runs ->
-      contents = JSON.stringify({name, files})
-      fs.writeFile "results/#{name}-#{now()}.json", contents, (err) ->
-        console.warn "Could not save results for #{name}!" if err?
+      # ¯(°_o)/¯
+      console.log('Done all files!')
 
 # Internal: Invokes an external Python process to tokenize the given string.
 #
@@ -107,3 +103,16 @@ tokenize = (text, done) ->
 # Internal: Returns a {String} of the current UNIX timestamp
 now = () ->
   "" + new Date().getTime()
+
+# Internal: Runs an assertion to verify that the file is equivilent to its
+# canonical form.
+#
+# The verification process is:
+#
+#     normalized := file | tokenizer
+#     expect that (normalized | typer | tokenizer) is normalized
+verify = (tokens, canonicalTokens) ->
+  util = require 'util'
+  diff =  require('deep-diff').diff(canonicalTokens, tokens)
+  console.warn(util.inspect(diff, depth: null)) if diff
+  expect(tokens).toEqual(canonicalTokens)
