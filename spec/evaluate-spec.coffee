@@ -59,11 +59,6 @@ fdescribe "The empirical evaluation", ->
   #
   #  * Write a file using Gamboge.
   describe 'Gamboge', ->
-    beforeEach ->
-      waitsForPromise ->
-        atom.packages.activatePackage('gamboge')
-      runs ->
-
     it "tests Gamboge"
 
   describe 'Optional Tests', ->

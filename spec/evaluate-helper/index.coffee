@@ -46,35 +46,25 @@ module.exports =
 
     expect(@editor).toBeTruthy()
     tokenizedFiles.forEach ({tokens, filename}) ->
-      canonicalTokens = tokens
       # Empty the text editor...
       @editor.setText ''
 
       # TODO: This should also collect prediction-by-prediction stats.
-      {keystrokes} = fn.call(@, canonicalTokens)
+      {keystrokes} = fn.call(@, tokens)
 
       # XXX: Uh.... get rid of a newline at the end...
       @editor.backspace()
       text = @editor.getText()
 
-      tokens = null
-      runs ->
-        tokenize text, (err, result) ->
-          expect(err).toBeFalsy()
-          tokens = result
+      verify(text, tokens) if SHOULD_VERIFY
 
-      waitsFor((-> tokens?), 'Expected Python script to terminate.', 500)
-
-      # Continue to the next file if we should verify.
-      runs ->
-        verify(tokens, canonicalTokens) if SHOULD_VERIFY
-        info = {name, filename, keystrokes}
-        # Save the contets
-        contents = JSON.stringify(info)
-        fs.writeFile "results/#{name}-#{now()}.json", contents, (err) ->
-          console.warn "Could not save results for #{name}!" if err?
-        filesDone++
-        process.stdout.write "\x1b[46mFinished \x1b[1m#{filename}\x1b[m\n"
+      info = {name, filename, keystrokes}
+      # Save the contets
+      contents = JSON.stringify(info)
+      fs.writeFile "results/#{name}-#{now()}.json", contents, (err) ->
+        console.warn "Could not save results for #{name}!" if err?
+      filesDone++
+      process.stdout.write "\x1b[46mFinished \x1b[1m#{filename}\x1b[m\n"
 
     waitsFor((->filesDone == tokenizedFiles.length), '???', 2**24)
 
@@ -111,8 +101,19 @@ now = () ->
 #
 #     normalized := file | tokenizer
 #     expect that (normalized | typer | tokenizer) is normalized
-verify = (tokens, canonicalTokens) ->
-  util = require 'util'
-  diff =  require('deep-diff').diff(canonicalTokens, tokens)
-  console.warn(util.inspect(diff, depth: null)) if diff
-  expect(tokens).toEqual(canonicalTokens)
+verify = (text, canonicalTokens) ->
+  tokens = null
+  runs ->
+    console.log "Verifying #{canonicalTokens.length} tokens..."
+    tokenize text, (err, result) ->
+      expect(err).toBeFalsy()
+      tokens = result
+  console.log "derp"
+
+  waitsFor((-> tokens?), 'Expected Python script to terminate.', 500)
+
+  runs ->
+    util = require 'util'
+    diff =  require('deep-diff').diff(canonicalTokens, tokens)
+    console.warn(util.inspect(diff, depth: null)) if diff
+    expect(tokens).toEqual(canonicalTokens)
