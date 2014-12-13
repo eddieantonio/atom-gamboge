@@ -61,8 +61,7 @@ module.exports =
       info = {name, filename, keystrokes}
       # Save the contets
       contents = JSON.stringify(info)
-      fs.writeFile "results/#{name}-#{now()}.json", contents, (err) ->
-        console.warn "Could not save results for #{name}!" if err?
+      fs.writeFileSync "results/#{name}-#{now()}.json", contents
       filesDone++
       process.stdout.write "\x1b[46mFinished \x1b[1m#{filename}\x1b[m\n"
 
@@ -108,8 +107,6 @@ verify = (text, canonicalTokens) ->
     tokenize text, (err, result) ->
       expect(err).toBeFalsy()
       tokens = result
-  console.log "derp"
-
   waitsFor((-> tokens?), 'Expected Python script to terminate.', 500)
 
   runs ->
