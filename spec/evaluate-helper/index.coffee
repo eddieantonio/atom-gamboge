@@ -52,27 +52,41 @@ module.exports =
       # Empty the text editor...
       @editor.setText ''
 
-      # TODO: This should also collect prediction-by-prediction stats.
-      {keystrokes} = fn.call(@, tokens)
+      info = null
 
-      # XXX: Uh.... get rid of a newline at the end...
-      @editor.backspace()
-      text = @editor.getText()
+      # Ran AFTER typing....
+      finalize = =>
+        # XXX: Uh.... get rid of a newline at the end...
+        @editor.backspace()
+        text = @editor.getText()
 
-      verify(text, tokens) if SHOULD_VERIFY
+        verify(text, tokens) if SHOULD_VERIFY
 
-      info = {name, filename, keystrokes}
-      # Save the contents...
-      contents = JSON.stringify(info)
-      # XXX:
-      # We also have to the get the right pwd because it doesn't...?
-      {PWD} = process.env
-      fs.writeFileSync("#{PWD}/results/#{name}-#{now()}.json", contents, {flag: 'w'})
-      filesDone++
-      process.stdout.write "\x1b[46mFinished \x1b[1m#{filename}\x1b[m\n"
+        info = {name, filename, keystrokes}
+        # Save the contents...
+        contents = JSON.stringify(info)
+        # XXX:
+        # We also have to the get the right pwd because it doesn't...?
+        {PWD} = process.env
+        fs.writeFileSync("#{PWD}/results/#{name}-#{now()}.json", contents, {flag: 'w'})
+        filesDone++
+        process.stdout.write "\x1b[46mFinished \x1b[1m#{filename}\x1b[m\n"
+
+      if fn.length == 2
+        # Async call
+        done = false
+        fn.call @, tokens, (result) ->
+          info = result
+          done = true
+        waitsFor((->done), 'typer did not finish promptly', 15 * 60 * 1000)
+        runs ->
+          finalize()
+      else
+        info = fn.call(@, tokens)
+        finalize()
+
 
     waitsFor((->filesDone == tokenizedFiles.length), '???', 2**24)
-
     runs ->
       # ¯(°_o)/¯
       console.log('Done all files!')
