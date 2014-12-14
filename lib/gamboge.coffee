@@ -13,45 +13,29 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Note: this code heavily based on atom/autocomplete, (C) GitHub Inc. 2014
+# Note: this code heavily based on atom/autocomplete, (C) GitHub Inc. 2014 
 # https://github.com/atom/autocomplete/blob/master/lib/autocomplete.coffee
 module.exports =
 
   config: require('./config')
 
-  subscriptions: null
+  editorSubcription: null
 
   activate: ->
-    console.log '[Gamboge]: Activating'
+    GambogeView = require './gamboge-view'
 
-    {CompositeDisposable} = require('event-kit')
-    PredictionList = require('./prediction-list')
-    HackyGhostView = require('./hacky-ghost-text-view')
-    EditorSpy = require('./editor-spy')
-
-    console.assert not @subscriptions?
-    @subscriptions = new CompositeDisposable
-
+    console.log 'Activating Gamboge...'
     # Activate on each editor.
-    @subscriptions.add atom.workspace.observeTextEditors (editor) =>
-      console.log '[Gamboge]: new editor'
-      editorView = atom.views.getView(editor)
+    @editorSubcription = atom.workspace.observeTextEditors (editor) =>
+      return if editor.mini
+      gambogeView = new GambogeView(editor)
+      editor.onDidDestroy =>
+        # Clean up the event dispatcher.
+        gambogeView.remove()
 
-      # Instantiate all the MVC doohickeys.
-      predictions = new PredictionList
-      view = new HackyGhostView(predictions, editorView)
-      controller = new EditorSpy(predictions, editor)
-
-      @subscriptions.add editor.onDidDestroy =>
-        @deactivateEditor(editor, controller, view)
-
-  deactivateEditor: (editor, controller, view) ->
-    console.log '[Gamboge]: deacivating editor'
-    view.removeAll()
-    controller.destroy()
-
-  # Disposes of all subscriptions.
+  # TODO: According to the
+  # [docs](https://atom.io/docs/latest/creating-a-package#source-code)
+  # deactivate is fine as long as you're not doing things to external files.
   deactivate: ->
-    console.log '[Gamboge]: deactivating...'
-    @subscriptions?.dispose()
-    @subscriptions = null
+    @editorSubcription?.dispose()
+    @editorSubcription = null
