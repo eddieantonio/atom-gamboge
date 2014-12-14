@@ -27,7 +27,33 @@ module.exports = (tokens) ->
     lineNum = editor.getLastBufferRow()
     editor.indentationForBufferRow(lineNum)
 
-  # Handlers
+  # Normal typer
+  typeItLikeABigOlDoofus = (text, category) ->
+    delta = switch category
+      when 'INDENT'
+        # Auto-indent means no key press.
+        logicalIndent += 1
+        0
+      when 'DEDENT'
+        logicalIndent -= 1
+        editor.backspace()
+        1
+      when 'NEWLINE'
+        doNewLine()
+      when 'NL'
+        doUnimportantNewline()
+        1
+      when 'ENDMARKER'
+        0
+      else
+        # The space thing is an issue for verifying comments, but I don't
+        # really care at this point.
+        typedText = if category is 'COMMENT' then text else "#{text} "
+        editor.insertText typedText
+        text.length
+    {keystrokes: delta}
+
+  # Standard Handlers
   doNewLine = ->
     backspaceCounter = 0
 
@@ -44,40 +70,23 @@ module.exports = (tokens) ->
   doUnimportantNewline = ->
     # <NL> are just newlines that are ignored by the syntax.
     indentLevelBeforeNewline = currentIndentLevel()
-    @editor.insertNewlineBelow()
-    console.assert(currentIndentLevel() is indentLevelBeforeNewline)
+    editor.insertNewlineBelow()
+    #console.assert(currentIndentLevel() is indentLevelBeforeNewline)
 
+
+  # FINALLY, THE ACTAUL PART THAT DOES THINGS:
+  tokenStats = []
 
   # For each token...
   while tokens[i]?
     {text, category} = tokens[i]
-
-    delta = switch category
-      when 'INDENT'
-        # Auto-indent means no key press.
-        logicalIndent += 1
-        0
-      when 'DEDENT'
-        logicalIndent -= 1
-        editor.backspace()
-        1
-      when 'NEWLINE'
-        doNewLine()
-      when 'NL'
-        1
-      when 'ENDMARKER'
-        0
-      else
-        editor.insertText text
-        # I forgot why I did this. I think because it changes the shebang
-        # line?
-        unless category is 'COMMENT'
-          editor.insertText ' '
-        text.length
-
-    count += delta
+    # Back off to the standard typer.
+    {keystrokes, tokenInfo} = typeItLikeABigOlDoofus(text, category)
+    tokenStats.push(tokenInfo)
+    count += keystrokes
     i += 1
 
+  debugger
   keystrokes: count
 
 
