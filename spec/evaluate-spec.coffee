@@ -46,7 +46,7 @@ fdescribe "The empirical evaluation", ->
   #  * write a file with only indent assistance.
 
   describe 'Atom', ->
-    it "tests unassisted typing in Atom", ->
+    xit "tests unassisted typing in Atom", ->
       testEnvironment 'plain-text', require('../typers/plain-text')
 
   # Evaluation 2:
@@ -59,7 +59,8 @@ fdescribe "The empirical evaluation", ->
   #
   #  * Write a file using Gamboge.
   describe 'Gamboge', ->
-    it "tests Gamboge"
+    it "tests Gamboge", ->
+      testEnvironment 'gamboge-first-match', require('../typers/gamboge-first-match')
 
   describe 'Optional Tests', ->
     it "tests AutoComplete+Gamboge"
