@@ -169,7 +169,7 @@ class GambogeView extends View
     # Get text for the current line.
     cursorPosition = @editor.getCursorBufferPosition()
     # Get at most five lines of context back.
-    aWhileAgo = new Point(atLeastZero(cursorPosition.row - 5), 0)
+    aWhileAgo = new Point(atLeastZero(cursorPosition.row - 2), 0)
     contextRange = new Range(aWhileAgo, cursorPosition)
 
     # TODO: Get more text than just the current line.

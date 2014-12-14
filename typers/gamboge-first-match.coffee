@@ -1,3 +1,8 @@
+# # Gamboge
+#
+# First match semantics. Picks the first match in the list.
+# Might need to include whether it's the longest match in the list.
+#
 # # Required data:
 #
 # ## Per file

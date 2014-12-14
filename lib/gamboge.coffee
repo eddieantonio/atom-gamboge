@@ -13,7 +13,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Note: this code heavily based on atom/autocomplete, (C) GitHub Inc. 2014 
+# Note: this code heavily based on atom/autocomplete, (C) GitHub Inc. 2014
 # https://github.com/atom/autocomplete/blob/master/lib/autocomplete.coffee
 module.exports =
 
