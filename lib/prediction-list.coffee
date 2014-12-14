@@ -27,6 +27,9 @@ class PredictionList
     @_index = 0
     @emitter = new Emitter
 
+    # XXX: Put this in globals so that the typer has access to it!
+    global.PLIST = @
+
     @setPredictions predictions if predictions?
 
   # Get the next prediction.

@@ -26,6 +26,9 @@ PythonShell = require 'python-shell'
 tokenizedFiles = require './tokens'
 
 SHOULD_VERIFY = not process.env.NO_VERIFY
+# XXX: haha, lol
+SHOULD_VERIFY = no
+
 
 module.exports =
 
@@ -59,9 +62,12 @@ module.exports =
       verify(text, tokens) if SHOULD_VERIFY
 
       info = {name, filename, keystrokes}
-      # Save the contets
+      # Save the contents...
       contents = JSON.stringify(info)
-      fs.writeFileSync "results/#{name}-#{now()}.json", contents
+      # XXX:
+      # We also have to the get the right pwd because it doesn't...?
+      {PWD} = process.env
+      fs.writeFileSync("#{PWD}/results/#{name}-#{now()}.json", contents, {flag: 'w'})
       filesDone++
       process.stdout.write "\x1b[46mFinished \x1b[1m#{filename}\x1b[m\n"
 
