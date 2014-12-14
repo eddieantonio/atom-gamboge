@@ -18,6 +18,7 @@
 #
 module.exports = (tokens, done) ->
   index = 0         # Index of the current token to type.
+  typingToken = - 1 # Current token that is being typed.
   count = 0         # Amount of keystrokes
   logicalIndent = 0 # Used for indenty stuff.
   editor = @editor  # Fat arrows are dumb
@@ -108,6 +109,7 @@ module.exports = (tokens, done) ->
       tokenLen: info.tokens.length
 
   typeNextTokens = () ->
+    typingToken = index
     if not tokens[index]?
       # No more tokens left to type... :C
       return done({keystrokes: count, tokens: tokenStats})
@@ -130,6 +132,14 @@ module.exports = (tokens, done) ->
 
   # FINALLY THE PART THAT DOES STUFF!
   PLIST.onDidChangePredictions (info) ->
+    # No need to predict if there ain't predicting anything.
+    if not tokens[index]?
+       # No more tokens left to type... :C
+       return done({keystrokes: count, tokens: tokenStats})
+    console.log "#{index + 1}/#{tokens.length}: #{PLIST.length()}
+                 predictions for #{tokens[index].text}"
+    # XXX: Prevent a race condition by introducing a different race condition.
+    return if typingToken >= index
     typeNextTokens()
 
   # Get the first prediction!
