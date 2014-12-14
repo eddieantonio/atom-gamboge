@@ -55,7 +55,7 @@ module.exports = (tokens, done) ->
         text.length
     keystrokes: delta
     tokenDelta: 1
-    tokenInfo: [ inList: no, pos: null, size: 0 ]
+    tokenInfo: {inList: no, pos: null, size: PLIST.length()}
 
   nextSuggestion = () ->
     atom.commands.dispatch(editorView, 'gamboge:next-prediction')
@@ -85,21 +85,33 @@ module.exports = (tokens, done) ->
     indentLevelBeforeNewline = currentIndentLevel()
     editor.insertNewlineBelow()
 
-
   # THE GAMBOGE TYPER
   gambogeIt = (text, category) ->
-    if not PLIST._predictions?.length
+    if not PLIST.length()
       # No predictions? Skip fast!
       return null
-    # TODO: Find FIRST MATCH.
-    # TODO: Report data!
-    debugger
-    null
+
+    info = indexOfFirstMatch(tokens, index, PLIST._predictions)
+    # Miss!
+    return null if not info?
+
+    for _ in [0...info.index]
+      nextSuggestion()
+    useSuggestion()
+
+    keystrokes: info.index + 1 # suggestion down + complete-all
+    tokenDelta: info.index
+    tokenInfo:
+      inList: yes
+      pos: info.index
+      size: PLIST.length()
+      tokenLen: info.tokens.length
 
   typeNextTokens = () ->
     if not tokens[index]?
       # No more tokens left to type... :C
       return done({keystrokes: count, tokens: tokenStats})
+
 
     {text, category} = tokens[index]
     # Try the standard typer.
@@ -124,7 +136,6 @@ module.exports = (tokens, done) ->
   forcePredict()
 
 
-
 # Return: {Boolean} whether next "important" token is an indent.
 nextImportantTokenIsIndent = (tokens, i)->
   j = 1
@@ -135,3 +146,26 @@ nextImportantTokenIsIndent = (tokens, i)->
     j += 1
 
   tokens[i + j]?.category is 'INDENT'
+
+# Returns the index, tokens, and entropy of the first matching suggestion or
+# null.
+indexOfFirstMatch = (originalTokens, tokenStart, suggestionList) ->
+  for suggestion, index in suggestionList
+    {tokens, entropy} = suggestion
+    if matchesSuggestion(originalTokens, tokenStart, tokens)
+      return {index, tokens, entropy}
+  return null
+
+# Does the token at position i match suggestion?
+matchesSuggestion = (tokens, i, suggestion) ->
+  for suggestedToken, j in suggestion
+    return false if not tokensMatch(tokens[i + j], suggestedToken)
+  return true
+
+# Does the full token match the suggestion text?
+tokensMatch = (token, suggestion) ->
+  switch token.category
+    when 'NL', 'NEWLINE' then suggestion in ['<NL>', '<NEWLINE>']
+    when 'DEDENT' then suggestion is '<DEDENT>'
+    when 'INDENT' then suggestion is '<INDENT>'
+    else suggestion is token.text
