@@ -60,13 +60,13 @@ module.exports =
         @editor.backspace()
         text = @editor.getText()
 
+        info.filename = filename
+
         verify(text, tokens) if SHOULD_VERIFY
 
-        info = {name, filename, keystrokes}
         # Save the contents...
         contents = JSON.stringify(info)
-        # XXX:
-        # We also have to the get the right pwd because it doesn't...?
+        # XXX: We also have to the get the right pwd because it doesn't...?
         {PWD} = process.env
         fs.writeFileSync("#{PWD}/results/#{name}-#{now()}.json", contents, {flag: 'w'})
         filesDone++

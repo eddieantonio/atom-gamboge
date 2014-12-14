@@ -16,13 +16,12 @@
 #  - length of suggestion taken per list (-> is multi-token worth it?)
 #  - how long is the list? (-> MRR)
 #
-module.exports = (tokens) ->
+module.exports = (tokens, done) ->
   i = 0
   count = 0
   logicalIndent = 0
   editor = @editor
   editorView = atom.views.getView(editor)
-  hasPrediction = false
 
   # Helpers (bound by closure).
   currentIndentLevel = =>
@@ -83,41 +82,36 @@ module.exports = (tokens) ->
     indentLevelBeforeNewline = currentIndentLevel()
     editor.insertNewlineBelow()
 
-
   # THE GAMBOGE TYPER
   gambogeIt = (text, category) ->
-    waitsFor (->hasPrediction), 60 * 1000
-    runs ->
-      hasPrediction = false
     {}
 
-  # FINALLY, THE ACTAUL PART THAT DOES THINGS:
-  tokenStats = []
+  typeNextTokens = (index) ->
+    return done({keystrokes: 0})
 
-  PLIST.onDidChangePredictions (info) ->
-    hasPrediction = true
-
-  # Get the first prediction!
-  forcePredict()
-
-  # For each token...
-  while tokens[i]?
-    {text, category} = tokens[i]
-
+    {text, category} = tokens[index]
     info = {keystrokes, tokenInfo, tokenDelta} = gambogeIt(text, category)
-    debugger
 
     # Back off to the standard typer.
     if not info?
-      debugger
       {keystrokes, tokenInfo} = typeItLikeABigOlDoofus(text, category)
       tokenDelta = 1
 
     tokenStats.push(tokenInfo)
     count += keystrokes
-    i += 1
+    typeNextToken(index + 1)
 
-  keystrokes: count
+
+  # FINALLY, THE ACTAUL PART THAT DOES THINGS:
+  tokenStats = []
+
+  PLIST.onDidChangePredictions (info) ->
+    typeNextTokens(i)
+
+  # Get the first prediction!
+  forcePredict()
+
+
 
 
 # Return: {Boolean} whether next "important" token is an indent.
