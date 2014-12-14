@@ -17,10 +17,11 @@
 #  - how long is the list? (-> MRR)
 #
 module.exports = (tokens, done) ->
-  i = 0
-  count = 0
-  logicalIndent = 0
-  editor = @editor
+  index = 0         # Index of the current token to type.
+  count = 0         # Amount of keystrokes
+  logicalIndent = 0 # Used for indenty stuff.
+  editor = @editor  # Fat arrows are dumb
+  tokenStats = []   # Stuff about each token in the editor.
   editorView = atom.views.getView(editor)
 
   # Helpers (bound by closure).
@@ -52,7 +53,9 @@ module.exports = (tokens, done) ->
         typedText = if category is 'COMMENT' then text else "#{text} "
         editor.insertText typedText
         text.length
-    {keystrokes: delta}
+    keystrokes: delta
+    tokenDelta: 1
+    tokenInfo: [ inList: no, pos: null, size: 0 ]
 
   nextSuggestion = () ->
     atom.commands.dispatch(editorView, 'gamboge:next-prediction')
@@ -63,14 +66,14 @@ module.exports = (tokens, done) ->
   forcePredict = () ->
     atom.commands.dispatch(editorView, 'gamboge:show-suggestions')
 
-  # Standard Handlers
+  # Plain-text Handlers
   doNewLine = ->
     backspaceCounter = 0
 
     # When we've indented BUT the next syntax-relevant token isn't an
     # indent, then we gotta backspace:
     editor.insertNewlineBelow()
-    unless nextImportantTokenIsIndent(tokens, i)
+    unless nextImportantTokenIsIndent(tokens, index)
       while currentIndentLevel() > logicalIndent
         editor.backspace()
         backspaceCounter++
@@ -82,35 +85,43 @@ module.exports = (tokens, done) ->
     indentLevelBeforeNewline = currentIndentLevel()
     editor.insertNewlineBelow()
 
+
   # THE GAMBOGE TYPER
   gambogeIt = (text, category) ->
-    {}
+    if not PLIST._predictions?.length
+      # No predictions? Skip fast!
+      return null
+    # TODO: Find FIRST MATCH.
+    # TODO: Report data!
+    debugger
+    null
 
-  typeNextTokens = (index) ->
-    return done({keystrokes: 0})
+  typeNextTokens = () ->
+    if not tokens[index]?
+      # No more tokens left to type... :C
+      return done({keystrokes: count, tokens: tokenStats})
 
     {text, category} = tokens[index]
-    info = {keystrokes, tokenInfo, tokenDelta} = gambogeIt(text, category)
-
+    # Try the standard typer.
+    info = gambogeIt(text, category)
     # Back off to the standard typer.
-    if not info?
-      {keystrokes, tokenInfo} = typeItLikeABigOlDoofus(text, category)
-      tokenDelta = 1
+    info = typeItLikeABigOlDoofus(text, category) if not info?
 
-    tokenStats.push(tokenInfo)
+    {keystrokes, tokenInfo, tokenDelta} = info
+
+    tokenStats = tokenStats.concat(tokenInfo)
     count += keystrokes
-    typeNextToken(index + 1)
 
+    index += tokenDelta
+    # The next prediction SHOULD start now...
+    forcePredict()
 
-  # FINALLY, THE ACTAUL PART THAT DOES THINGS:
-  tokenStats = []
-
+  # FINALLY THE PART THAT DOES STUFF!
   PLIST.onDidChangePredictions (info) ->
-    typeNextTokens(i)
+    typeNextTokens()
 
   # Get the first prediction!
   forcePredict()
-
 
 
 
