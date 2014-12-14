@@ -96,7 +96,7 @@ def calculate_cross_entropy(filename):
         r = requests.post(url, files=dict(f=f))
     assert r.status_code == 200
     content = r.json()
-    return {'filename': filename, 'xentropy': content['xentropy']}
+    return {'filename': filename, 'xentropy': content['cross_entropy']}
 
 
 def train_corpus_excluding(repo):
@@ -243,9 +243,10 @@ def main(*args):
     for repo in repos:
         delete_corpus()
         train_corpus_excluding(repo)
+        # Do this first because of a bug in UnnaturalCode...
+        write_cross_entropy(repo)
         if write_json_tokens(json_tokens_for_repo(repo)):
             run_atom(repo)
-        write_cross_entropy(repo)
 
         # Force a collection... just to be sure.
         gc.collect()
