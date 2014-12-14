@@ -2,12 +2,13 @@
 
 # Requires requests library
 
-import fnmatch
 import csv
+import fnmatch
 import gc
 import json
 import logging
 import os
+import random
 import requests
 import sys
 import subprocess32 as subprocess
@@ -222,6 +223,12 @@ def config_logging():
                             stream=sys.stderr,
                             datefmt='%H:%M')
 
+def choose_n(seq, n=8):
+    "Choose n elements from the list."
+    as_list = list(seq)
+    random.shuffle(as_list)
+    return as_list[:n]
+
 
 def main(*args):
     repos = get_index('corpus')
@@ -240,7 +247,7 @@ def main(*args):
     if '--no-atom' in args:
         context.should_run_atom = False
 
-    for repo in repos:
+    for repo in choose_n(repos, n=8):
         delete_corpus()
         train_corpus_excluding(repo)
         # Do this first because of a bug in UnnaturalCode...
