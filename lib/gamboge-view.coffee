@@ -74,8 +74,9 @@ class GambogeView extends View
       return @resetChangeIgnorance() if @lastChangeWasPredictionInsert
       @askForPredictions()
 
-    @subscriptions.add atom.commands.add '.gamboge',
+    @subscriptions.add atom.commands.add '.editor',
       'gamboge:show-suggestions':    => @askForPredictions()
+    @subscriptions.add atom.commands.add '.gamboge',
       'gamboge:complete':            => @completeTokens n: 1
       'gamboge:complete-all':        => @completeTokens all: yes
       'gamboge:next-prediction':     => @predictionList.next()

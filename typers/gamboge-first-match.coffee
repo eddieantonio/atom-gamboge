@@ -21,6 +21,8 @@ module.exports = (tokens) ->
   count = 0
   logicalIndent = 0
   editor = @editor
+  editorView = atom.views.getView(editor)
+  hasPrediction = false
 
   # Helpers (bound by closure).
   currentIndentLevel = =>
@@ -53,6 +55,15 @@ module.exports = (tokens) ->
         text.length
     {keystrokes: delta}
 
+  nextSuggestion = () ->
+    atom.commands.dispatch(editorView, 'gamboge:next-prediction')
+
+  useSuggestion = () ->
+    atom.commands.dispatch(editorView, 'gamboge:complete-all')
+
+  forcePredict = () ->
+    atom.commands.dispatch(editorView, 'gamboge:show-suggestions')
+
   # Standard Handlers
   doNewLine = ->
     backspaceCounter = 0
@@ -71,22 +82,41 @@ module.exports = (tokens) ->
     # <NL> are just newlines that are ignored by the syntax.
     indentLevelBeforeNewline = currentIndentLevel()
     editor.insertNewlineBelow()
-    #console.assert(currentIndentLevel() is indentLevelBeforeNewline)
 
+
+  # THE GAMBOGE TYPER
+  gambogeIt = (text, category) ->
+    waitsFor (->hasPrediction), 60 * 1000
+    runs ->
+      hasPrediction = false
+    {}
 
   # FINALLY, THE ACTAUL PART THAT DOES THINGS:
   tokenStats = []
 
+  PLIST.onDidChangePredictions (info) ->
+    hasPrediction = true
+
+  # Get the first prediction!
+  forcePredict()
+
   # For each token...
   while tokens[i]?
     {text, category} = tokens[i]
+
+    info = {keystrokes, tokenInfo, tokenDelta} = gambogeIt(text, category)
+    debugger
+
     # Back off to the standard typer.
-    {keystrokes, tokenInfo} = typeItLikeABigOlDoofus(text, category)
+    if not info?
+      debugger
+      {keystrokes, tokenInfo} = typeItLikeABigOlDoofus(text, category)
+      tokenDelta = 1
+
     tokenStats.push(tokenInfo)
     count += keystrokes
     i += 1
 
-  debugger
   keystrokes: count
 
 

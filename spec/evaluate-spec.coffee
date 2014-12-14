@@ -59,6 +59,10 @@ fdescribe "The empirical evaluation", ->
   #
   #  * Write a file using Gamboge.
   describe 'Gamboge', ->
+    beforeEach ->
+      waitsForPromise -> atom.packages.activatePackage('gamboge')
+      runs ->
+        atom.config.set('gamboge.unnaturalRESTOrigin', 'localhost:5000')
     it "tests Gamboge", ->
       testEnvironment 'gamboge-first-match', require('../typers/gamboge-first-match')
 
