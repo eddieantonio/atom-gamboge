@@ -46,7 +46,7 @@ fdescribe "The empirical evaluation", ->
   #  * write a file with only indent assistance.
 
   describe 'Atom', ->
-    xit "tests unassisted typing in Atom", ->
+    it "tests unassisted typing in Atom", ->
       testEnvironment 'plain-text', require('../typers/plain-text')
 
   # Evaluation 2:
