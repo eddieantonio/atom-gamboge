@@ -1,2 +1,3 @@
-requests==2.4.3
-subprocess32==3.2.6
+requests>=2.4.0
+subprocess32>=3.2.0
+#statlib==1.1 # Must use --allow-external --allow-unverified for this :/

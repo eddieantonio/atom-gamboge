@@ -128,7 +128,7 @@ def dir_for_repo(repo):
 
 
 def tokens_for_repo(repo):
-    'Oh yeah, it also does cross-entropy :/'
+    "Tokenizes ALL OF THE FILES in the repo"
     # The root directory of the repository:
     repo_root = dir_for_repo(repo)
 
