@@ -148,8 +148,7 @@ def calculate_per_file_repo_cross_entropy(repo):
         yield filename, entropy
 
 
-
-def json_tokens_for_repo(repo):
+def json_tokens(files, repo):
     r"""
 
     This repo has all of the UnicodeDecodeErrors...
@@ -161,7 +160,6 @@ def json_tokens_for_repo(repo):
     >>> '\ud83d\udca9' in json_tokens_for_repo(repo)
     True
     """
-    files = tokens_for_repo(repo)
     try:
         json_string = json.dumps(files, ensure_ascii=True)
     except UnicodeDecodeError:
@@ -194,7 +192,7 @@ def write_cross_entropy(repo):
         for info in xentropies:
             writer.writerow(info)
 
-    logging.info("Wrote xentropies for %s for %s", location, repo)
+    logger.info("Wrote xentropies for %s for %s", location, repo)
 
 
 def run_atom(repo):
@@ -202,9 +200,10 @@ def run_atom(repo):
     if not context.should_run_atom:
         return
     logger.info('Running Atom...')
-    status =  subprocess.call(['apm', 'test'])
+    status = subprocess.call(['apm', 'test'])
     if status != 0:
         logger.warn('Atom returned with %d status on %r', status, repo)
+
 
 def config_logging():
     # Set up a the logger...
@@ -222,6 +221,7 @@ def config_logging():
                             format=standard_fmt,
                             stream=sys.stderr,
                             datefmt='%H:%M')
+
 
 def choose_n(seq, n=8):
     "Choose n elements from the list."
@@ -252,8 +252,11 @@ def main(*args):
         train_corpus_excluding(repo)
         # Do this first because of a bug in UnnaturalCode...
         write_cross_entropy(repo)
-        if write_json_tokens(json_tokens_for_repo(repo)):
-            run_atom(repo)
+        for tokenizedFile in tokens_for_repo(repo):
+            # So this takes a list of a single element because... uh...
+            # historical reasons... Yeah.
+            if write_json_tokens(json_tokens([tokenizedFile], repo)):
+                run_atom(repo)
 
         # Force a collection... just to be sure.
         gc.collect()
