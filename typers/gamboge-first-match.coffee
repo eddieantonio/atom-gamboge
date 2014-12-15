@@ -54,9 +54,10 @@ module.exports = (tokens, done) ->
         typedText = if category is 'COMMENT' then text else "#{text} "
         editor.insertText typedText
         text.length
+
+    # Tokens
     keystrokes: delta
     tokenDelta: 1
-    tokenInfo: {inList: no, pos: null, size: PLIST.length()}
 
   nextSuggestion = () ->
     atom.commands.dispatch(editorView, 'gamboge:next-prediction')
@@ -100,13 +101,12 @@ module.exports = (tokens, done) ->
       nextSuggestion()
     useSuggestion()
 
-    keystrokes: info.index + 1 # suggestion down + complete-all
-    tokenDelta: info.index
+    # Return all of these fun stats!
+    keystrokes: info.index + 1 # press suggestion down i times + complete-all
+    tokenDelta: info.tokens.length
     tokenInfo:
-      inList: yes
-      pos: info.index
-      size: PLIST.length()
-      tokenLen: info.tokens.length
+      position: info.index
+      suggestionLength: info.tokens.length
 
   typeNextTokens = () ->
     typingToken = index
@@ -114,16 +114,20 @@ module.exports = (tokens, done) ->
       # No more tokens left to type... :C
       return done({keystrokes: count, tokens: tokenStats})
 
-
     {text, category} = tokens[index]
-    # Try the standard typer.
+    # Try the gamboge typer.
     info = gambogeIt(text, category)
     # Back off to the standard typer.
     info = typeItLikeABigOlDoofus(text, category) if not info?
 
     {keystrokes, tokenInfo, tokenDelta} = info
 
-    tokenStats = tokenStats.concat(tokenInfo)
+    tokenInfo = {} if not tokenInfo?
+    tokenInfo.inList = tokenInfo.position?
+    tokenInfo.position ?= null
+    tokenInfo.numberOfSuggestions = PLIST.length()
+
+    tokenStats.push(tokenInfo)
     count += keystrokes
 
     index += tokenDelta

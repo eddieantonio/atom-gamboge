@@ -61,6 +61,7 @@ module.exports =
         text = @editor.getText()
 
         info.filename = filename
+        info.count = tokens.length
 
         verify(text, tokens) if SHOULD_VERIFY
 
@@ -70,7 +71,7 @@ module.exports =
         {PWD} = process.env
         fs.writeFileSync("#{PWD}/results/#{name}-#{now()}.json", contents, {flag: 'w'})
         filesDone++
-        process.stdout.write "\x1b[46mFinished \x1b[1m#{filename}\x1b[m\n"
+        process.stdout.write "\x1b[46m#{name} typed \x1b[1m#{filename}\x1b[m\n"
 
       if fn.length == 2
         # Async call
