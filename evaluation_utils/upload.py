@@ -97,7 +97,7 @@ def calculate_cross_entropy(filename):
         r = requests.post(url, files=dict(f=f))
     assert r.status_code == 200
     content = r.json()
-    return {'filename': filename, 'xentropy': content['cross_entropy']}
+    return content['cross_entropy']
 
 
 def train_corpus_excluding(repo):
@@ -186,7 +186,8 @@ def write_cross_entropy(repo):
         return
 
     xentropies = calculate_per_file_repo_cross_entropy(repo)
-    location = os.path.join(context.result_location, repo.name + '.json')
+    name = "{}-{}.csv".format(repo.owner, repo.name)
+    location = os.path.join(basedir, 'xentropy', name)
     with open(location, 'wb') as f:
         writer = csv.writer(f)
         for info in xentropies:
