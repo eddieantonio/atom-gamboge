@@ -21,6 +21,9 @@ module.exports =
 # active predictions.
 class PredictionList
 
+  # XXX: disable predictions during text editing.
+  _notifications: yes
+
   # Creates the initial prediction list.
   constructor: (predictions) ->
     @_predictions = []
@@ -37,6 +40,10 @@ class PredictionList
 
   # Get the previous prediction.
   prev: -> @changeRelative -1
+
+  disableNotifications: -> @_notifications = no
+  enableNotifications: -> @_notifications = yes
+
 
   # Change the index by the given value.
   changeRelative: (amount) ->
@@ -66,7 +73,8 @@ class PredictionList
     @_predictions = PredictionList.createUnderlyingArray(newPredictions)
     @_index = 0
 
-    @emitter.emit 'did-predictions-change', @
+    if @_notifications
+      @emitter.emit 'did-predictions-change', @
     # Trigger the 'changed index event' with the new index 0.
     @changeRelative 0
 
