@@ -117,10 +117,10 @@ class GambogeView extends View
     {tokens} = prediction
 
     # Get a marker for the place immediately adjacent the cursor.
-    afterCursor = @editor.getCursorBufferPosition()
+    afterCursor = @editor.getLastCursor()?.getBufferPosition()
 
     # Oh dear...
-    {row, column} = @editor.getCursorScreenPosition()
+    {row, column} = @editor.getLastCursor()?.getScreenPosition()
 
     # TODO: Check if the cursor is on screen!
 
