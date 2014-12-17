@@ -51,6 +51,7 @@ module.exports =
     tokenizedFiles.forEach ({tokens, filename}) ->
       # Empty the text editor...
       @editor.setText ''
+      @filename = filename
 
       # XXX: Type 0..(tokens.length-350) tokens of the file.
       if name.match('gamboge')

@@ -110,7 +110,7 @@ module.exports = (tokens, done) ->
       position: info.index
       suggestionLength: info.tokens.length
 
-  typeNextTokens = (prefix) ->
+  typeNextTokens = (prefix) =>
     typingToken = index
     if not tokens[index]?
       # No more tokens left to type... :C
@@ -129,6 +129,7 @@ module.exports = (tokens, done) ->
     tokenInfo.position ?= null
     tokenInfo.numberOfSuggestions = PLIST.length()
     tokenInfo.prefix = prefix
+    tokenInfo.filename = @filename
     P(I(tokenInfo))
 
 
