@@ -54,10 +54,7 @@ module.exports =
       @filename = filename
 
       # XXX: Type 0..(tokens.length-350) tokens of the file.
-      if name.match('gamboge')
-        tokensLeft = typeMostOfTheFile(tokens)
-      else
-        tokensLeft = tokens
+      tokensLeft = typeMostOfTheFile(tokens)
 
       info = null
 
