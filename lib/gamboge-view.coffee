@@ -113,14 +113,16 @@ class GambogeView extends View
   # Using markers, shows the GhostText.
   showGhostText: (prediction) ->
     return unless prediction
+    return unless @editor.getLastCursor()?
 
     {tokens} = prediction
 
+
     # Get a marker for the place immediately adjacent the cursor.
-    afterCursor = @editor.getLastCursor()?.getBufferPosition()
+    afterCursor = @editor.getLastCursor().getBufferPosition()
 
     # Oh dear...
-    {row, column} = @editor.getLastCursor()?.getScreenPosition()
+    {row, column} = @editor.getLastCursor().getScreenPosition()
 
     # TODO: Check if the cursor is on screen!
 
