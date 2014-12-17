@@ -54,7 +54,8 @@ module.exports =
       @filename = filename
 
       # XXX: Type 0..(tokens.length-350) tokens of the file.
-      tokensLeft = typeMostOfTheFile(tokens)
+      tokensLeft = typeMostOfTheFile(tokens, 125)
+      @editor.buffer.clearUndoStack()
 
       info = null
 
