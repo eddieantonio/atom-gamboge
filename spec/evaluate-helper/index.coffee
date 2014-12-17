@@ -52,6 +52,12 @@ module.exports =
       # Empty the text editor...
       @editor.setText ''
 
+      # XXX: Type 0..(tokens.length-350) tokens of the file.
+      if name.match('gamboge')
+        tokensLeft = typeMostOfTheFile(tokens)
+      else
+        tokensLeft = tokens
+
       info = null
 
       # Ran AFTER typing....
@@ -71,19 +77,19 @@ module.exports =
         {PWD} = process.env
         fs.writeFileSync("#{PWD}/results/#{name}-#{now()}.json", contents, {flag: 'w'})
         filesDone++
-        process.stdout.write "\x1b[46m#{name} typed \x1b[1m#{filename}\x1b[m\n"
+        process.stderr.write "\x1b[46m#{name} typed \x1b[1m#{filename}\x1b[m\n"
 
       if fn.length == 2
         # Async call
         done = false
-        fn.call @, tokens, (result) ->
+        fn.call @, tokensLeft, (result) ->
           info = result
           done = true
         waitsFor((->done), 'typer did not finish promptly', 15 * 60 * 1000)
         runs ->
           finalize()
       else
-        info = fn.call(@, tokens)
+        info = fn.call(@, tokensLeft)
         finalize()
 
 
@@ -135,3 +141,26 @@ verify = (text, canonicalTokens) ->
     diff =  require('deep-diff').diff(canonicalTokens, tokens)
     console.warn(util.inspect(diff, depth: null)) if diff
     expect(tokens).toEqual(canonicalTokens)
+
+# Internal: Types most of the file except for suffixLength tokens.
+typeMostOfTheFile = (tokens, suffixLength=350) ->
+  typer = require('../../typers/plain-text')
+
+  length = tokens.length - suffixLength
+
+  # If there aren't enough tokens to type, just return them.
+  if length < 0
+    console.log "File (#{tokens.length}) is less than
+                 #{suffixLength} tokens long."
+    return tokens
+
+  [prefix, tokensLeftOver] = [tokens.slice(0, length), tokens.slice(length)]
+
+  console.log "Typing #{prefix.length}/#{tokens.length} tokens;
+               #{tokensLeftOver.length} left to type."
+
+  PLIST?.disableNotifications()
+  typer(prefix)
+  PLIST?.enableNotifications()
+
+  tokensLeftOver
