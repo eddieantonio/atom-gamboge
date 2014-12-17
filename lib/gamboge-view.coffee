@@ -103,9 +103,9 @@ class GambogeView extends View
     text = @getTextForCursorContext()
 
     # Set off prediction request
-    @predict text, (predictions) =>
-      return unless predictions?
-      @predictionList.setPredictions predictions
+    @predict text, (predictions, context) =>
+      #return unless predictions?
+      @predictionList.setPredictions predictions, context
 
 
 
@@ -194,9 +194,12 @@ class GambogeView extends View
     xhr.setRequestHeader('Accept', 'application/json')
     xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded')
     xhr.addEventListener 'load', =>
-      return done(null) unless xhr.status is 200
-      {suggestions} = JSON.parse(xhr.responseText)
-      done(suggestions)
+      return done(null, "HTTP #{xhr.status}") unless xhr.status is 200
+      {suggestions, tokens} = JSON.parse(xhr.responseText)
+      done(suggestions, tokens)
+    xhr.timeout = 60 * 1000
+    xhr.ontimeout = ->
+      done(null, 'timeout')
     xhr.send("s=#{encodeURIComponent(text)}")
 
   # Tear down any state and detach.

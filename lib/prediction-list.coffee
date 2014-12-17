@@ -68,13 +68,16 @@ class PredictionList
     status
 
   # Replace the predictions with a brand new set.
-  setPredictions: (newPredictions) ->
-    @invalidate()
-    @_predictions = PredictionList.createUnderlyingArray(newPredictions)
-    @_index = 0
+  setPredictions: (newPredictions, context) ->
+    if newPredictions?
+      @invalidate()
+      @_predictions = PredictionList.createUnderlyingArray(newPredictions)
+      @_index = 0
+    else
+      console.log "Cannot set predictions: #{context}"
 
     if @_notifications
-      @emitter.emit 'did-predictions-change', @
+      @emitter.emit 'did-predictions-change', @, context
     # Trigger the 'changed index event' with the new index 0.
     @changeRelative 0
 
