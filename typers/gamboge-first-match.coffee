@@ -22,7 +22,6 @@ module.exports = (tokens, done) ->
   count = 0         # Amount of keystrokes
   logicalIndent = 0 # Used for indenty stuff.
   editor = @editor  # Fat arrows are dumb
-  tokenStats = []   # Stuff about each token in the editor.
   editorView = atom.views.getView(editor)
 
   # Helpers (bound by closure).
@@ -115,7 +114,7 @@ module.exports = (tokens, done) ->
     typingToken = index
     if not tokens[index]?
       # No more tokens left to type... :C
-      return done({keystrokes: count, tokens: tokenStats})
+      return done({keystrokes: count, tokens: 'see token info'})
 
     {text, category} = tokens[index]
     # Try the gamboge typer.
@@ -130,10 +129,9 @@ module.exports = (tokens, done) ->
     tokenInfo.position ?= null
     tokenInfo.numberOfSuggestions = PLIST.length()
     tokenInfo.prefix = prefix
+    P(I(tokenInfo))
 
-    console.log("Finished token: #{I(tokenInfo)}")
 
-    tokenStats.push(tokenInfo)
     count += keystrokes
 
     index += tokenDelta
@@ -145,7 +143,7 @@ module.exports = (tokens, done) ->
     # No need to predict if there ain't predicting anything.
     if not tokens[index]?
        # No more tokens left to type... :C
-       return done({keystrokes: count, tokens: tokenStats})
+       return done({keystrokes: count, tokens: 'see token file'})
     console.log "#{index + 1}/#{tokens.length}: #{PLIST.length()}
                  predictions for #{I(contextTokens)}"
     # XXX: Prevent a race condition by introducing a different race condition.
@@ -189,6 +187,9 @@ tokensMatch = (token, suggestion) ->
     when 'DEDENT' then suggestion is '<DEDENT>'
     when 'INDENT' then suggestion is '<INDENT>'
     else suggestion is token.text
+
+P = (arg) ->
+  process.stdout.write("#{arg}\n\n")
 
 I = do ->
   {inspect} = require('util')
