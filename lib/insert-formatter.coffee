@@ -21,7 +21,7 @@ makeIndents = (string, times) ->
 
 # Newline PLUS the next indentation
 newlineHandler =  (peek) ->
-  indentLevel = @getIndentLevel() - (peek is 'DEDENT')
+  indentLevel = @getIndentLevel() - (peek is '<DEDENT>')
   indent = makeIndents @getIndentChars(), indentLevel
 
   "\n#{indent}"
@@ -50,7 +50,7 @@ class InsertFormatter
     # Simply emit the indent string...
     '<INDENT>': (editor) -> @getIndentChars()
     # This is a no-op since the newline handles this stuff already!
-    'DEDENT': () -> ''
+    '<DEDENT>': () -> ''
 
 
 module.exports = {InsertFormatter}
