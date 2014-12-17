@@ -77,7 +77,7 @@ class PredictionList
       console.log "Cannot set predictions: #{context}"
 
     if @_notifications
-      @emitter.emit 'did-predictions-change', @, context
+      @emitter.emit 'did-predictions-change', context
     # Trigger the 'changed index event' with the new index 0.
     @changeRelative 0
 

@@ -97,6 +97,9 @@ module.exports = (tokens, done) ->
     # Miss!
     return null if not info?
 
+    # It's too long to be completed!
+    return null if info.index >= text.length
+
     for _ in [0...info.index]
       nextSuggestion()
     useSuggestion()
@@ -108,7 +111,7 @@ module.exports = (tokens, done) ->
       position: info.index
       suggestionLength: info.tokens.length
 
-  typeNextTokens = () ->
+  typeNextTokens = (prefix) ->
     typingToken = index
     if not tokens[index]?
       # No more tokens left to type... :C
@@ -126,6 +129,9 @@ module.exports = (tokens, done) ->
     tokenInfo.inList = tokenInfo.position?
     tokenInfo.position ?= null
     tokenInfo.numberOfSuggestions = PLIST.length()
+    tokenInfo.prefix = prefix
+
+    console.log("Finished token: #{I(tokenInfo)}")
 
     tokenStats.push(tokenInfo)
     count += keystrokes
@@ -135,16 +141,16 @@ module.exports = (tokens, done) ->
     forcePredict()
 
   # FINALLY THE PART THAT DOES STUFF!
-  PLIST.onDidChangePredictions (info) ->
+  PLIST.onDidChangePredictions (contextTokens) ->
     # No need to predict if there ain't predicting anything.
     if not tokens[index]?
        # No more tokens left to type... :C
        return done({keystrokes: count, tokens: tokenStats})
     console.log "#{index + 1}/#{tokens.length}: #{PLIST.length()}
-                 predictions for #{tokens[index].text}"
+                 predictions for #{I(contextTokens)}"
     # XXX: Prevent a race condition by introducing a different race condition.
     return if typingToken >= index
-    typeNextTokens()
+    typeNextTokens(contextTokens)
 
   # Get the first prediction!
   forcePredict()
@@ -183,3 +189,8 @@ tokensMatch = (token, suggestion) ->
     when 'DEDENT' then suggestion is '<DEDENT>'
     when 'INDENT' then suggestion is '<INDENT>'
     else suggestion is token.text
+
+I = do ->
+  {inspect} = require('util')
+  (obj)->
+    inspect(obj, depth: null)
