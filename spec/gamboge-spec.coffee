@@ -15,6 +15,16 @@
 
 {WorkspaceView} = require 'atom'
 
+
+#FIXME: Temporary thing for pretty error output on MY screen.
+if process.env.TERM_PROGRAM is 'iTerm.app' and process.env.USER is 'eddieantonio'
+  try
+    pe = require('pretty-error').start()
+    pe.skipNodeFiles()
+    pe.skipPackage('q')
+    pe.skipPath('/Applications/Atom.app/Contents/Resources/app/vendor/jasmine.js')
+
+
 describe "Gamboge", ->
   [workspaceView] = []
 
