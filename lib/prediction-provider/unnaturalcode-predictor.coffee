@@ -13,21 +13,26 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-module.exports =
-  # Do the prediction, calling `done(maybeData)` when finished.
-  # maybeData can be null, to indicate that the prediction did not succeed.
-  predict: (text, language, done) ->
-    origin = atom.config.get 'gamboge.unnaturalRESTOrigin'
+PredictionProvider = require './'
 
+console.log('wow', PredictionProvider)
+
+module.exports =
+class UnnaturalCodeProvider extends PredictionProvider
+
+  # Do the prediction, calling emiiting 'predictions-ready' when finished.
+  predict: (id, {text, language}) ->
+    origin = atom.config.get 'gamboge.unnaturalRESTOrigin'
     url = "http://#{origin}/#{language}/predict/"
+
     xhr = new XMLHttpRequest()
     xhr.open('POST', url, yes)
     xhr.setRequestHeader('Accept', 'application/json')
-    xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded')
     xhr.addEventListener 'load', =>
-      return done(null) unless xhr.status is 200
-      {suggestions} = JSON.parse(xhr.responseText)
-      done(suggestions)
+      switch xhr.status
+        when 200
+          @succeeded(id, JSON.parse(xhr.responseText))
+        else
+          @failed(id)
+
     xhr.send("s=#{encodeURIComponent(text)}")
-
-

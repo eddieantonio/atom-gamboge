@@ -13,6 +13,16 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# There is only one predictor!
-module.exports =
-  defaultPredictor: require('./unnaturalcode-predictor').predict
+PredictionProvider = require '../lib/prediction-provider'
+predictions = require './fixtures/predictions'
+
+describe "PredictionProvider", ->
+  # TODO: EVERYTHING!
+  describe '::constructor', ->
+  describe '::requestPrediction', ->
+  describe 'when a prediction is ready', ->
+  describe '.defaultProvider', ->
+    it 'returns the UnnaturalCode provider', ->
+      UnnaturalCodeProvider =
+        require '../lib/prediction-provider/unnaturalcode-predictor'
+      expect(PredictionProvider.defaultProvider).toBe UnnaturalCodeProvider
